@@ -1,6 +1,8 @@
 # Meridian
 
-Meridian is a hackathon demo for a discovery-call automation tool. The core thesis is the adaptive research loop: each interview transcript updates the living insight document and makes the next question bank sharper.
+Meridian is a hackathon demo for an autonomous discovery-call interviewer. The PM provides the research goal; Meridian prepares the interview plan, conducts the live voice interview, synthesizes the transcript, updates the living insight document, and uses those learnings to conduct a sharper next interview.
+
+The core thesis is the adaptive research loop: each Meridian-conducted interview updates the living insight document and makes the AI interviewer's next plan sharper. The question bank is not primarily a human interview guide; it is the AI interviewer's operating plan, surfaced in the demo so judges can see the system getting smarter.
 
 Read first:
 
@@ -20,7 +22,7 @@ fixtures/
   contacts/            Mock interviewee data
   dossiers/            Offline dossier artifacts
   transcripts/         Pre-staged transcript seam fixtures
-  question_banks/      Broad v1 and sharper v2 banks for the money shot
+  question_banks/      Broad v1 and sharper v2 AI interview plans for the money shot
   insights/            Initial and post-interview living insight docs
 ```
 
@@ -90,4 +92,4 @@ curl -X POST "http://localhost:8001/research/run-fixture?mode=claude"
 
 Joshua should extend `packages/research_core/**`, `fixtures/**`, and the research/report/Redis API paths from the deterministic fixture loop into Claude-backed synthesis, Redis persistence, and PDF reporting.
 
-Bilguun should extend `apps/web/**` into the polished demo money shot and then wire the Deepgram voice path into the canonical transcript shape.
+Bilguun should extend `apps/web/**` into the polished demo money shot and then wire the Deepgram voice path into the canonical transcript shape. The voice path should be treated as Meridian conducting the interview, with Claude as the interviewer's reasoning model, not as transcription for a human interviewer.

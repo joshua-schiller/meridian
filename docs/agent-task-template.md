@@ -8,6 +8,9 @@ Read first:
 - discovery_call_tool_PRD.md
 - docs/agent-collaboration.md
 
+Product frame:
+Meridian conducts the interviews itself. Treat the question bank as the AI interviewer's next-call plan, not as a guide for a human interviewer.
+
 Objective:
 
 Workstream:
@@ -37,7 +40,7 @@ Handoff requirements:
 
 ```text
 Objective:
-Build the fixture-driven transcript -> synthesis -> living insight doc -> next question bank path.
+Build the fixture-driven transcript -> synthesis -> living insight doc -> next AI interview plan path.
 
 Workstream:
 Core loop
@@ -60,7 +63,7 @@ PDF renderer
 Auth, calendar, email, or live browsing
 
 Definition of done:
-A local command runs Interview 1 fixture through the loop and writes or prints Question Bank 2 with specific references to Interview 1 findings.
+A local command runs Interview 1 fixture through the loop and writes or prints the Interview 2 AI interview plan with specific references to Interview 1 findings.
 
 Verification:
 Run the fixture command and include the output path or excerpt in the handoff.
@@ -91,7 +94,7 @@ Deepgram integration files
 PDF renderer
 
 Definition of done:
-The app shows Interview 1 and Interview 2 question banks side by side, plus a living insight document panel, using realistic fixture data.
+The app shows that Meridian conducted or consumed Interview 1, learned from it, and produced a sharper Interview 2 AI interview plan, plus a living insight document panel, using realistic fixture data.
 
 Verification:
 Run the web app locally and capture the URL plus any browser-check result in the handoff.

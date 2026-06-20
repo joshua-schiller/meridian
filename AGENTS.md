@@ -6,7 +6,13 @@ For the named Joshua/Bilguun execution split, also read `docs/team-execution-pla
 
 ## North Star
 
-The product is the adaptive discovery loop: research goal -> question bank -> transcript -> synthesis -> living insight doc -> sharper next question bank -> PDF report. Voice matters, but the adaptive loop is the demo thesis.
+Meridian is an autonomous discovery interviewer. The PM sets the research goal and can approve direction, but Meridian is supposed to prepare for, conduct, synthesize, and adapt the interviews itself.
+
+The product loop is: research goal -> AI interview plan/question bank -> Meridian conducts the interview -> transcript -> synthesis -> living insight doc -> sharper AI interview plan -> next Meridian-conducted interview -> PDF report.
+
+Do not frame the question bank as primarily a human interview guide. It is the operating plan for the AI interviewer. The UI may expose it so judges can understand why the next AI-led interview gets sharper, but the product promise is not "better prep for a human researcher."
+
+Voice matters because it is how Meridian conducts the interview. The adaptive loop is still the demo thesis: the AI interviewer gets better after every call.
 
 Judging priorities:
 
@@ -21,10 +27,10 @@ If a change does not support one of those outcomes, treat it as out of scope unl
 - Work in a dedicated git worktree and branch. Do not have two people or agents editing the same checkout.
 - Keep branches scoped to one workstream. If the task crosses workstreams, split it or coordinate first.
 - State the intended owned paths before editing. Avoid drive-by changes in shared config, lockfiles, contracts, and fixtures.
-- Build the transcript-based loop first. Live voice must feed the same transcript seam instead of creating a parallel pipeline.
+- Build the transcript-based loop first. Live voice must feed the same transcript seam instead of creating a parallel pipeline, but remember the live voice path is an AI interviewer conducting the call, not a recorder for a human-led interview.
 - Preserve deterministic demo fallbacks. Hardcoded transcripts, mock contacts, and prebuilt dossiers are allowed and encouraged for the core path.
 - Prefer boring orchestration: FastAPI plus an explicit Python state machine. Do not add LangGraph, CrewAI, AutoGen, or similar frameworks without human approval.
-- Keep UI work focused on the money shot: question diff, live insight document, transcript progress, and report generation.
+- Keep UI work focused on the money shot: Meridian conducts Interview 1, learns from the transcript, updates the insight document, and uses a sharper plan to conduct Interview 2.
 - Do not implement auth, multitenancy, real email/calendar, LinkedIn scraping, live Browserbase browsing, production security/compliance, or broad observability unless the PRD is updated.
 
 ## Suggested Repo Shape
@@ -40,7 +46,7 @@ packages/
 fixtures/
   contacts/            Mock interviewees and offline dossiers
   transcripts/         Pre-staged demo transcripts and voice-fail fallbacks
-  question_banks/      Golden question bank examples for the side-by-side diff
+  question_banks/      Golden AI interview-plan examples for the side-by-side diff
 docs/
   demo/                Run-of-show, interviewee briefing, sponsor talking points
 ```

@@ -2,20 +2,26 @@
 
 This guide exists to keep two humans and multiple coding agents moving quickly without merge collisions or scope creep.
 
+## Product Frame
+
+Meridian is an AI interviewer, not just a research assistant for a human interviewer. A PM supplies the research goal and may approve direction, but the demo product should be framed as Meridian preparing for, conducting, synthesizing, and adapting discovery interviews itself.
+
+The question bank is the AI interviewer's plan for the next call. It is shown in the UI to make the adaptive loop legible, but agents should not treat it as the primary human deliverable.
+
 ## Default Parallel Split
 
 Start with two durable workstreams. For this team, Joshua should own the core loop and Bilguun should own the demo UI first; `docs/team-execution-plan.md` has the full named schedule.
 
 | Workstream | Primary owner | Owned paths | Demo outcome |
 | --- | --- | --- | --- |
-| Core loop | Joshua | `packages/research_core/**`, `fixtures/**`, API routes that expose loop outputs | Question bank gets sharper after each transcript |
-| Demo UI | Bilguun | `apps/web/**`, UI-only styles/components | Judges can see the question diff and living insight doc immediately |
+| Core loop | Joshua | `packages/research_core/**`, `fixtures/**`, API routes that expose loop outputs | Meridian's next interview plan gets sharper after each transcript |
+| Demo UI | Bilguun | `apps/web/**`, UI-only styles/components | Judges can see how Meridian conducts, learns, and adapts immediately |
 
 After the first scaffold lands, split additional branches only when needed:
 
 | Workstream | Owned paths | Notes |
 | --- | --- | --- |
-| Deepgram voice | `apps/api/**/deepgram*`, `apps/api/**/voice*`, voice env docs | Must output the same transcript format used by the text loop |
+| Deepgram voice | `apps/api/**/deepgram*`, `apps/api/**/voice*`, voice env docs | Meridian conducts the interview; output must match the transcript format used by the text loop |
 | Report/PDF | `packages/research_core/**/report*`, `apps/api/**/report*`, report templates | Claude emits structured Markdown, renderer turns it into PDF |
 | Redis memory | `apps/api/**/redis*`, persistence adapters, env docs | Redis improves sponsor story but cannot be required for demo-scale correctness |
 | Demo docs | `docs/demo/**` | Interviewee briefing, fallback script, run-of-show |
@@ -75,7 +81,9 @@ Guardrails:
 
 ## Contracts
 
-The transcript is the seam. Everything downstream should consume a transcript object, whether it came from Deepgram, a recorded fallback, or a fixture.
+The transcript is the seam. Everything downstream should consume a transcript object, whether it came from Meridian's live Deepgram interview, a recorded fallback, or a fixture.
+
+The `QuestionBank` contract represents the AI interviewer's next-call plan. It can be displayed to users and judges, but it should be generated and evaluated as instructions for the autonomous interviewer.
 
 Minimum shared shapes:
 
@@ -103,9 +111,9 @@ git status -sb
 
 Then run the smallest useful verification:
 
-- Core loop: fixture transcript -> synthesis -> updated insight doc -> regenerated question bank.
+- Core loop: fixture transcript -> synthesis -> updated insight doc -> regenerated AI interview plan.
 - UI: page loads and shows the side-by-side question diff with real fixture data.
-- Voice: live or mocked Deepgram path emits the canonical transcript shape.
+- Voice: live or mocked Deepgram path has Meridian conduct the interview and emits the canonical transcript shape.
 - Report: final insight document renders to Markdown/PDF.
 
 PRs should be small enough to review quickly. Merge order should usually be:

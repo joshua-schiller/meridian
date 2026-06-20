@@ -2,12 +2,18 @@
 
 This plan is optimized for two people working in parallel during the hackathon with minimal merge collisions.
 
+## Product Interpretation
+
+Meridian conducts the discovery interviews itself. The PM sets the research goal and can approve or steer direction, but the product is not a tool for a human researcher to manually run better calls.
+
+Treat every question bank as the AI interviewer's plan for the next Meridian-conducted interview. The UI should expose the plan evolution because it proves the adaptive loop, not because the plan is the primary human-facing artifact.
+
 ## Assignment Summary
 
 | Person | Primary outcome | Owned paths | Avoid touching |
 | --- | --- | --- | --- |
 | Joshua | Adaptive loop quality, Claude prompts, synthesis, report/PDF, Redis-backed insight state | `packages/research_core/**`, `fixtures/**`, `apps/api/**/research*`, `apps/api/**/report*`, `apps/api/**/redis*`, `docs/demo/**` | `apps/web/**` except to review data shape; Deepgram-specific files unless pairing |
-| Bilguun | Demo UI money shot, Deepgram live interview path, transcript streaming UX | `apps/web/**`, `apps/api/**/deepgram*`, `apps/api/**/voice*`, `docs/demo/**/voice*` | `packages/research_core/**` except read-only contracts/fixtures; Redis/report internals |
+| Bilguun | Demo UI money shot, Meridian live voice interview path, transcript streaming UX | `apps/web/**`, `apps/api/**/deepgram*`, `apps/api/**/voice*`, `docs/demo/**/voice*` | `packages/research_core/**` except read-only contracts/fixtures; Redis/report internals |
 
 The split is intentional: Joshua owns whether the product thesis is compelling; Bilguun owns whether judges can see and hear it land.
 
@@ -42,8 +48,8 @@ Keep the original checkout clean on `main` for pulling, reviewing, and resolving
 Joshua:
 
 - Build the P0 text loop on fixtures.
-- Make the question regen cite specific Interview 1 findings.
-- Produce a dramatic Interview 1 vs Interview 2 question-bank delta.
+- Make the AI interviewer's next plan cite specific Interview 1 findings.
+- Produce a dramatic Interview 1 vs Interview 2 plan delta.
 - Keep Redis out of the load-bearing path at this stage.
 
 Bilguun:
@@ -68,14 +74,14 @@ Joshua:
 
 Bilguun:
 
-- Build Deepgram live voice path with Claude as BYO-LLM.
+- Build the Deepgram live voice path so Meridian conducts the interview with Claude as the interviewer's reasoning model.
 - Ensure the voice path emits the canonical transcript shape.
 - Add the scripted barge-in and personalized opening.
 - Wire transcript progress into the UI without changing core synthesis logic.
 
 Integration point:
 
-- Deepgram output must feed the same transcript seam as fixture transcripts.
+- Deepgram output from Meridian's live interview must feed the same transcript seam as fixture transcripts.
 - If voice flakes, the UI must be able to flip to a pre-staged transcript.
 
 ## Hours 18-24
