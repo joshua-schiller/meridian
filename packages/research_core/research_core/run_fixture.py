@@ -24,6 +24,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="deterministic",
         help="Loop generator. `auto` uses Claude only when ANTHROPIC_API_KEY is set.",
     )
+    parser.add_argument(
+        "--debug-dir",
+        default=None,
+        help="When set, writes Claude raw responses here for debugging contract misses.",
+    )
     return parser
 
 
@@ -31,10 +36,16 @@ def main() -> int:
     args = build_parser().parse_args()
     fixtures_dir = Path(args.fixtures_dir)
     output_dir = Path(args.output_dir)
+    if args.debug_dir:
+        import os
+
+        os.environ["CLAUDE_DEBUG_DIR"] = args.debug_dir
 
     contact, dossier, transcript, prior_insight_doc, baseline_question_bank = load_demo_inputs(fixtures_dir)
     mode: LoopMode = args.mode
     try:
+        if mode == "claude":
+            print("Calling Claude adaptive loop...", file=sys.stderr)
         result = run_loop(
             transcript=transcript,
             prior_insight_doc=prior_insight_doc,
@@ -44,6 +55,8 @@ def main() -> int:
         )
     except ClaudeLoopError as exc:
         print(f"Claude loop failed: {exc}", file=sys.stderr)
+        if args.debug_dir:
+            print(f"Raw Claude response, if available, was written to {args.debug_dir}", file=sys.stderr)
         return 1
     written = write_loop_artifacts(output_dir, result)
 

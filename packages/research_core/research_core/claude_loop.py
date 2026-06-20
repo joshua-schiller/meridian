@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol
 import json
 import os
@@ -29,6 +30,7 @@ class ClaudeMessageClient(Protocol):
         *,
         model: str,
         max_tokens: int,
+        timeout_seconds: float,
         system: str,
         user_prompt: str,
     ) -> str:
@@ -40,16 +42,22 @@ class ClaudeLoopConfig:
     api_key: str | None = None
     model: str = DEFAULT_CLAUDE_MODEL
     max_tokens: int = 4096
+    timeout_seconds: float = 90.0
+    debug_dir: Path | None = None
 
     @classmethod
     def from_env(cls) -> "ClaudeLoopConfig":
         max_tokens = os.environ.get("CLAUDE_MAX_TOKENS", "4096")
+        timeout_seconds = os.environ.get("CLAUDE_TIMEOUT_SECONDS", "90")
+        debug_dir = os.environ.get("CLAUDE_DEBUG_DIR")
         return cls(
             api_key=os.environ.get("ANTHROPIC_API_KEY"),
             model=os.environ.get("CLAUDE_MODEL")
             or os.environ.get("ANTHROPIC_MODEL")
             or DEFAULT_CLAUDE_MODEL,
             max_tokens=int(max_tokens),
+            timeout_seconds=float(timeout_seconds),
+            debug_dir=Path(debug_dir) if debug_dir else None,
         )
 
 
@@ -62,6 +70,7 @@ class AnthropicMessagesClient:
         *,
         model: str,
         max_tokens: int,
+        timeout_seconds: float,
         system: str,
         user_prompt: str,
     ) -> str:
@@ -75,13 +84,16 @@ class AnthropicMessagesClient:
                 "Claude mode requires the `anthropic` package. Install API requirements first."
             ) from exc
 
-        client = Anthropic(api_key=self.api_key)
-        message = client.messages.create(
-            model=model,
-            max_tokens=max_tokens,
-            system=system,
-            messages=[{"role": "user", "content": user_prompt}],
-        )
+        client = Anthropic(api_key=self.api_key, timeout=timeout_seconds)
+        try:
+            message = client.messages.create(
+                model=model,
+                max_tokens=max_tokens,
+                system=system,
+                messages=[{"role": "user", "content": user_prompt}],
+            )
+        except Exception as exc:
+            raise ClaudeLoopError(f"Claude request failed: {exc}") from exc
         text_blocks = [
             block.text
             for block in message.content
@@ -132,6 +144,7 @@ def run_claude_adaptive_loop(
     raw_response = client.create_message(
         model=config.model,
         max_tokens=config.max_tokens,
+        timeout_seconds=config.timeout_seconds,
         system=SYSTEM_PROMPT,
         user_prompt=prompt,
     )
@@ -139,6 +152,7 @@ def run_claude_adaptive_loop(
         raw_response=raw_response,
         transcript=transcript,
         prior_insight_doc=prior_insight_doc,
+        debug_dir=config.debug_dir,
     )
 
 
@@ -158,8 +172,49 @@ def build_claude_loop_prompt(
         "transcript": transcript.model_dump(mode="json"),
         "prior_insight_doc": prior_insight_doc.model_dump(mode="json"),
         "required_response_shape": {
-            "updated_insight_doc": "LivingInsightDocument JSON",
-            "next_question_bank": "QuestionBank JSON for transcript.interview_number + 1",
+            "updated_insight_doc": {
+                "id": "insight_doc_after_interview_001",
+                "research_goal": transcript.research_goal,
+                "themes": [
+                    {
+                        "id": "theme_snake_case",
+                        "label": "short theme label",
+                        "findings": [
+                            {
+                                "id": "finding_snake_case",
+                                "text": "finding grounded in the transcript",
+                                "status": "open",
+                                "confidence": "medium",
+                                "supporting_quotes": [
+                                    {
+                                        "interviewee": transcript.interviewee_id,
+                                        "quote": "direct quote from transcript",
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ],
+                "open_questions": ["question still unresolved"],
+                "contradictions": [],
+            },
+            "next_question_bank": {
+                "id": f"question_bank_interview_{transcript.interview_number + 1:03d}_claude",
+                "research_goal": transcript.research_goal,
+                "interview_number": transcript.interview_number + 1,
+                "for_interviewee": next_interviewee_id,
+                "personalized_opening": "one sentence opening",
+                "questions": [
+                    {
+                        "id": "q1",
+                        "primary": "specific question",
+                        "rationale_gap": "what Interview 1 finding or gap this targets",
+                        "probes": ["follow-up probe"],
+                        "specificity_score": 0.82,
+                        "grounding": ["direct quote or finding from Interview 1"],
+                    }
+                ],
+            },
             "evidence": [
                 {
                     "id": "string",
@@ -181,18 +236,37 @@ def parse_claude_loop_response(
     raw_response: str,
     transcript: Transcript,
     prior_insight_doc: LivingInsightDocument,
+    debug_dir: Path | None = None,
 ) -> LoopResult:
+    write_debug_response(debug_dir, raw_response)
     try:
         payload = json.loads(extract_json_object(raw_response))
     except json.JSONDecodeError as exc:
-        raise ClaudeLoopError("Claude response was not valid JSON.") from exc
+        raise ClaudeLoopError(f"Claude response was not valid JSON: {exc}") from exc
 
     try:
-        updated_insight_doc = LivingInsightDocument.model_validate(payload["updated_insight_doc"])
-        next_question_bank = QuestionBank.model_validate(payload["next_question_bank"])
+        updated_insight_doc_payload = first_present(
+            payload,
+            "updated_insight_doc",
+            "insight_doc_after",
+            "living_insight_document",
+            "updated_living_insight_document",
+        )
+        next_question_bank_payload = first_present(
+            payload,
+            "next_question_bank",
+            "question_bank_after",
+            "generated_question_bank",
+            "regenerated_question_bank",
+        )
+        updated_insight_doc = LivingInsightDocument.model_validate(updated_insight_doc_payload)
+        next_question_bank = QuestionBank.model_validate(next_question_bank_payload)
         evidence = [LoopEvidence.model_validate(item) for item in payload.get("evidence", [])]
     except (KeyError, ValueError) as exc:
-        raise ClaudeLoopError("Claude response did not match the loop contract.") from exc
+        keys = ", ".join(payload.keys())
+        raise ClaudeLoopError(
+            f"Claude response did not match the loop contract: {exc}. Top-level keys: {keys}"
+        ) from exc
 
     validate_claude_loop_contract(
         transcript=transcript,
@@ -242,3 +316,17 @@ def extract_json_object(text: str) -> str:
     if start == -1 or end == -1 or end <= start:
         raise ClaudeLoopError("Claude response did not contain a JSON object.")
     return stripped[start : end + 1]
+
+
+def first_present(payload: dict, *keys: str):
+    for key in keys:
+        if key in payload:
+            return payload[key]
+    raise KeyError(f"missing one of: {', '.join(keys)}")
+
+
+def write_debug_response(debug_dir: Path | None, raw_response: str) -> None:
+    if debug_dir is None:
+        return
+    debug_dir.mkdir(parents=True, exist_ok=True)
+    (debug_dir / "claude_raw_response.txt").write_text(raw_response)

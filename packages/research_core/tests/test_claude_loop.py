@@ -1,4 +1,5 @@
 from pathlib import Path
+import tempfile
 import json
 import unittest
 from unittest.mock import patch
@@ -28,6 +29,7 @@ class StaticClaudeClient:
         *,
         model: str,
         max_tokens: int,
+        timeout_seconds: float,
         system: str,
         user_prompt: str,
     ) -> str:
@@ -61,7 +63,12 @@ class ClaudeLoopTests(unittest.TestCase):
             contact=contact,
             dossier=dossier,
             client=client,
-            config=ClaudeLoopConfig(api_key="test-key", model="claude-test", max_tokens=1024),
+            config=ClaudeLoopConfig(
+                api_key="test-key",
+                model="claude-test",
+                max_tokens=1024,
+                timeout_seconds=12,
+            ),
         )
 
         self.assertEqual(result.next_question_bank.interview_number, 2)
@@ -69,6 +76,36 @@ class ClaudeLoopTests(unittest.TestCase):
         self.assertEqual(client.last_model, "claude-test")
         self.assertIsNotNone(client.last_prompt)
         self.assertIn("required_response_shape", client.last_prompt or "")
+
+    def test_claude_loop_accepts_common_aliases_and_writes_debug_response(self) -> None:
+        contact, dossier, transcript, prior_doc, _ = load_demo_inputs(FIXTURES_DIR)
+        deterministic = run_adaptive_loop(
+            transcript=transcript,
+            prior_insight_doc=prior_doc,
+            contact=contact,
+            dossier=dossier,
+        )
+        response = json.dumps(
+            {
+                "insight_doc_after": deterministic.updated_insight_doc.model_dump(mode="json"),
+                "question_bank_after": deterministic.next_question_bank.model_dump(mode="json"),
+                "evidence": [item.model_dump(mode="json") for item in deterministic.evidence],
+            }
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = run_claude_adaptive_loop(
+                transcript=transcript,
+                prior_insight_doc=prior_doc,
+                contact=contact,
+                dossier=dossier,
+                client=StaticClaudeClient(response),
+                config=ClaudeLoopConfig(api_key="test-key", debug_dir=Path(temp_dir)),
+            )
+
+            self.assertTrue((Path(temp_dir) / "claude_raw_response.txt").exists())
+
+        self.assertEqual(result.next_question_bank.interview_number, 2)
 
     def test_claude_loop_rejects_ungrounded_question(self) -> None:
         contact, dossier, transcript, prior_doc, _ = load_demo_inputs(FIXTURES_DIR)
@@ -126,7 +163,7 @@ class ClaudeLoopTests(unittest.TestCase):
 
         self.assertIn(transcript.id, prompt)
         self.assertIn(prior_doc.id, prompt)
-        self.assertIn("QuestionBank JSON", prompt)
+        self.assertIn("next_question_bank", prompt)
 
 
 if __name__ == "__main__":

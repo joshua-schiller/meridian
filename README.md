@@ -49,7 +49,14 @@ Run the loop through Claude when `ANTHROPIC_API_KEY` is configured:
 ```bash
 export ANTHROPIC_API_KEY=...
 export CLAUDE_MODEL=claude-sonnet-4-5
+export CLAUDE_TIMEOUT_SECONDS=90
 PYTHONPATH=packages/research_core python3 -m research_core.run_fixture fixtures --mode claude
+```
+
+If Claude mode fails contract validation, rerun with a debug directory:
+
+```bash
+PYTHONPATH=packages/research_core python3 -m research_core.run_fixture fixtures --mode claude --debug-dir artifacts/claude_debug
 ```
 
 `--mode auto` uses Claude only when `ANTHROPIC_API_KEY` is present, otherwise it keeps the deterministic fallback.
