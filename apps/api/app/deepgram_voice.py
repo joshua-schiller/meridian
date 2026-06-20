@@ -262,14 +262,15 @@ class VoiceSession:
 @router.websocket("/session")
 async def voice_session_endpoint(
     ws: WebSocket,
-    contact_id: str = "pm_001",
+    contact: str = "maya_chen",
     scripted: bool = False,
 ) -> None:
+    contact_slug = contact
     contact = Contact.model_validate(
-        json.loads((FIXTURES_DIR / f"contacts/{contact_id}.json").read_text())
+        json.loads((FIXTURES_DIR / f"contacts/{contact_slug}.json").read_text())
     )
     dossier = Dossier.model_validate(
-        json.loads((FIXTURES_DIR / f"dossiers/{contact_id}.json").read_text())
+        json.loads((FIXTURES_DIR / f"dossiers/{contact_slug}.json").read_text())
     )
     question_bank = QuestionBank.model_validate(
         json.loads(

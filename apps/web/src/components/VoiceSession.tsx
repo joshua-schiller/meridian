@@ -109,7 +109,7 @@ export default function VoiceSession() {
       }
 
       const ws = new WebSocket(
-        `${API_WS_BASE}/voice/session?contact_id=pm_001&scripted=${scripted}`,
+        `${API_WS_BASE}/voice/session?contact=maya_chen&scripted=${scripted}`,
       );
       wsRef.current = ws;
 
