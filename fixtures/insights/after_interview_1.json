@@ -1,0 +1,66 @@
+{
+  "id": "insight_doc_after_interview_001",
+  "research_goal": "Understand why PMs at early-stage startups struggle with discovery research.",
+  "themes": [
+    {
+      "id": "theme_001",
+      "label": "Synthesis, not scheduling, is the bottleneck",
+      "findings": [
+        {
+          "id": "finding_001",
+          "text": "The team can get customers on calls, but post-call synthesis is skipped because it takes too much time.",
+          "status": "open",
+          "confidence": "medium",
+          "supporting_quotes": [
+            {
+              "interviewee": "pm_001",
+              "quote": "The hard part is not getting calls. We can get customers on the phone."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme_002",
+      "label": "Question banks stay broad for too long",
+      "findings": [
+        {
+          "id": "finding_002",
+          "text": "By later calls, PMs should be testing sharper hypotheses, but they often continue asking generic workflow questions.",
+          "status": "open",
+          "confidence": "medium",
+          "supporting_quotes": [
+            {
+              "interviewee": "pm_001",
+              "quote": "By the fourth call we should be testing a sharper hypothesis."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme_003",
+      "label": "Trust depends on visible evidence",
+      "findings": [
+        {
+          "id": "finding_003",
+          "text": "PMs may accept agent-generated questions if the system shows what changed, why, and which evidence supports the change.",
+          "status": "open",
+          "confidence": "medium",
+          "supporting_quotes": [
+            {
+              "interviewee": "pm_001",
+              "quote": "Show me what changed, why it changed, and what evidence it came from."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "open_questions": [
+    "Do other PMs also see synthesis as a bigger blocker than recruiting?",
+    "What evidence format makes an AI-generated question bank trustworthy?",
+    "How often do teams currently update interview guides between calls?"
+  ],
+  "contradictions": []
+}

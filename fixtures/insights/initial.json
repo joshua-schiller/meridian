@@ -1,0 +1,10 @@
+{
+  "id": "insight_doc_initial",
+  "research_goal": "Understand why PMs at early-stage startups struggle with discovery research.",
+  "themes": [],
+  "open_questions": [
+    "Which part of discovery breaks first: recruiting, preparation, live interviewing, synthesis, or follow-up?",
+    "What level of control do PMs want over AI-generated research artifacts?"
+  ],
+  "contradictions": []
+}

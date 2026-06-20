@@ -1,0 +1,42 @@
+{
+  "id": "question_bank_interview_001",
+  "research_goal": "Understand why PMs at early-stage startups struggle with discovery research.",
+  "interview_number": 1,
+  "for_interviewee": "pm_001",
+  "personalized_opening": "Maya, I saw your note about replacing long research cycles with weekly customer conversations.",
+  "questions": [
+    {
+      "id": "q1",
+      "primary": "What makes discovery research difficult for your team right now?",
+      "rationale_gap": "Establish the broad pain landscape before narrowing on workflow, tooling, or incentives.",
+      "probes": [
+        "Which part takes the most time?",
+        "Where do things usually get dropped?"
+      ],
+      "specificity_score": 0.24,
+      "grounding": []
+    },
+    {
+      "id": "q2",
+      "primary": "How do you prepare for a discovery call today?",
+      "rationale_gap": "Understand whether preparation is structured, ad hoc, or skipped.",
+      "probes": [
+        "What sources do you check before a call?",
+        "Who contributes to the interview guide?"
+      ],
+      "specificity_score": 0.31,
+      "grounding": []
+    },
+    {
+      "id": "q3",
+      "primary": "What happens to notes and transcripts after a customer interview?",
+      "rationale_gap": "Identify where synthesis succeeds or fails after the conversation ends.",
+      "probes": [
+        "How are findings shared?",
+        "How do they influence the next interview?"
+      ],
+      "specificity_score": 0.36,
+      "grounding": []
+    }
+  ]
+}

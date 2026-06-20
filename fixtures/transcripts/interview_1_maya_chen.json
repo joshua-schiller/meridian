@@ -1,0 +1,70 @@
+{
+  "id": "transcript_interview_001",
+  "research_goal": "Understand why PMs at early-stage startups struggle with discovery research.",
+  "interview_number": 1,
+  "interviewee_id": "pm_001",
+  "source": "fixture",
+  "turns": [
+    {
+      "id": "turn_001",
+      "speaker": "agent",
+      "timestamp_seconds": 0,
+      "text": "Maya, I saw your note about replacing long research cycles with weekly customer conversations. To start, what makes discovery hardest for your team right now?"
+    },
+    {
+      "id": "turn_002",
+      "speaker": "interviewee",
+      "timestamp_seconds": 18,
+      "text": "The hard part is not getting calls. We can get customers on the phone. The hard part is that every call creates a pile of notes and nobody has time to turn that into a better next call."
+    },
+    {
+      "id": "turn_003",
+      "speaker": "agent",
+      "timestamp_seconds": 42,
+      "text": "When that follow-up work gets skipped, what breaks downstream?"
+    },
+    {
+      "id": "turn_004",
+      "speaker": "interviewee",
+      "timestamp_seconds": 57,
+      "text": "We keep asking broad questions for too long. By the fourth call we should be testing a sharper hypothesis, but instead we are still asking people to tell us about their workflow from scratch."
+    },
+    {
+      "id": "turn_005",
+      "speaker": "agent",
+      "timestamp_seconds": 83,
+      "text": "What usually prevents the team from sharpening those questions between calls?"
+    },
+    {
+      "id": "turn_006",
+      "speaker": "interviewee",
+      "timestamp_seconds": 101,
+      "text": "Context is scattered. Sales notes live in the CRM, support has Slack threads, I have call notes in docs, and none of that is in front of me when I am writing the next interview guide."
+    },
+    {
+      "id": "turn_007",
+      "speaker": "agent",
+      "timestamp_seconds": 129,
+      "text": "If an agent handled part of that loop, where would you still want control?"
+    },
+    {
+      "id": "turn_008",
+      "speaker": "interviewee",
+      "timestamp_seconds": 147,
+      "text": "I would want to approve the direction, not rewrite every question. Show me what changed, why it changed, and what evidence it came from. If I trust that, I can move fast."
+    },
+    {
+      "id": "turn_009",
+      "speaker": "agent",
+      "timestamp_seconds": 174,
+      "text": "What would make the output stakeholder-ready instead of just useful for you?"
+    },
+    {
+      "id": "turn_010",
+      "speaker": "interviewee",
+      "timestamp_seconds": 192,
+      "text": "Executives need the pattern, the confidence level, and a few quotes. They do not want transcripts. They want to know what changed in our understanding and what decision it supports."
+    }
+  ],
+  "summary": "Maya says early-stage PMs can schedule discovery calls but fail to turn each call into sharper follow-up questions. The main blockers are scattered context, no time for synthesis, and low trust in outputs unless the system shows what changed and why."
+}

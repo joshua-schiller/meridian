@@ -1,0 +1,15 @@
+{
+  "id": "dossier_pm_001",
+  "contact_id": "pm_001",
+  "summary": "Maya leads product at a 22-person startup selling workflow software to customer success teams. Her public writing emphasizes fast customer feedback, but her team has no dedicated researcher and often compresses discovery into founder calls or sales notes.",
+  "personalization_hooks": [
+    "Recently wrote about replacing long research cycles with weekly customer conversations.",
+    "Owns product strategy without a dedicated research function.",
+    "Works in a market where sales, support, and product all hear different versions of customer pain."
+  ],
+  "likely_pain_points": [
+    "Too many sources of customer signal and not enough synthesis time.",
+    "Pressure to ship makes question planning feel optional.",
+    "Hard to connect one-off interviews into a coherent research narrative."
+  ]
+}

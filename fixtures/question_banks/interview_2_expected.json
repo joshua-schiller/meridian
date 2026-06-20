@@ -1,0 +1,48 @@
+{
+  "id": "question_bank_interview_002_expected",
+  "research_goal": "Understand why PMs at early-stage startups struggle with discovery research.",
+  "interview_number": 2,
+  "for_interviewee": "pm_002_pending",
+  "personalized_opening": "I am especially interested in how your team turns one customer conversation into a sharper next one.",
+  "questions": [
+    {
+      "id": "q1",
+      "primary": "In your last discovery sprint, what specifically changed in the interview guide after the first call?",
+      "rationale_gap": "Maya said teams keep asking broad questions for too long; this tests whether adaptive question sharpening happens elsewhere.",
+      "probes": [
+        "Who made that change?",
+        "Was the change based on a quote, a theme, or a stakeholder request?"
+      ],
+      "specificity_score": 0.78,
+      "grounding": [
+        "Maya: teams keep asking broad workflow questions even by the fourth call"
+      ]
+    },
+    {
+      "id": "q2",
+      "primary": "When customer context is scattered across CRM notes, Slack, docs, and support threads, which source actually shapes the next interview?",
+      "rationale_gap": "Maya identified scattered context as the blocker between interview notes and better follow-up questions.",
+      "probes": [
+        "What information gets ignored because it is hard to find?",
+        "What would you need to trust an automated synthesis of those sources?"
+      ],
+      "specificity_score": 0.84,
+      "grounding": [
+        "Maya: sales notes, support Slack threads, and call docs are not together when writing the next guide"
+      ]
+    },
+    {
+      "id": "q3",
+      "primary": "If an agent proposed the next question bank, what evidence would it need to show before you would approve it?",
+      "rationale_gap": "Maya wants control over direction and evidence, not manual rewriting; this probes the trust threshold.",
+      "probes": [
+        "Would confidence levels matter?",
+        "Would you want to see direct quotes attached to each new question?"
+      ],
+      "specificity_score": 0.81,
+      "grounding": [
+        "Maya: show me what changed, why it changed, and what evidence it came from"
+      ]
+    }
+  ]
+}

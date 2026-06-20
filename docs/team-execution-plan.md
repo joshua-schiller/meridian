@@ -11,26 +11,11 @@ This plan is optimized for two people working in parallel during the hackathon w
 
 The split is intentional: Joshua owns whether the product thesis is compelling; Bilguun owns whether judges can see and hear it land.
 
-## First Shared Contract
+## Shared Contract Status
 
-Before deep parallel work, create and merge one small scaffold/contract branch. This should take less than an hour.
+The initial scaffold and shared fixture contracts now exist on `main`.
 
-Owner: Joshua, with Bilguun reviewing quickly.
-
-Branch:
-
-```text
-agent/joshua/scaffold-contracts
-```
-
-Deliver:
-
-- Minimal repo scaffold.
-- Canonical fixture shapes for `Transcript`, `QuestionBank`, and `LivingInsightDocument`.
-- One Interview 1 transcript fixture and one expected Interview 2 question bank fixture.
-- A short command or README note showing where each app/package will live.
-
-After this lands, both people branch from updated `origin/main`.
+Before deep parallel work, both people should pull the latest `origin/main` and branch from the committed scaffold. Treat `packages/research_core/research_core/models.py` and the JSON files under `fixtures/**` as the first shared contract.
 
 ## Worktrees
 
