@@ -22,6 +22,7 @@ Current endpoints:
 - `POST /research/run-transcript`
 - `POST /report/from-transcript/markdown`
 - `POST /report/from-transcript.pdf`
+- `WS /voice/session`
 
 The API reads the same fixture files used by the web app and validates them through `packages/research_core`.
 
@@ -30,5 +31,7 @@ The API reads the same fixture files used by the web app and validates them thro
 `/demo/report/markdown` and `/demo/report.pdf` generate the stakeholder-ready report from the same loop payload. The report frames the question bank as Meridian's next AI interview plan, not as a human-led guide.
 
 `/research/run-transcript` accepts `{ "transcript": <canonical Transcript> }` from the voice session and returns the same adaptive-loop payload. `/report/from-transcript/markdown` and `/report/from-transcript.pdf` accept the same body and generate the report directly from that transcript. If prior insight docs, contact, dossier, or baseline question bank are omitted, the API uses the demo defaults.
+
+`/voice/session?contact=maya_chen&scripted=true` runs the reliable scripted interview fallback. `scripted=false` streams microphone audio through Deepgram STT/TTS. When the session completes, the web UI posts the emitted canonical transcript to `/research/run-transcript` and `/report/from-transcript.pdf`.
 
 Use `mode=deterministic`, `mode=auto`, or `mode=claude`. Claude mode requires `ANTHROPIC_API_KEY`; `CLAUDE_MODEL` defaults to `claude-sonnet-4-5`.

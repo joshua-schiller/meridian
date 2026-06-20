@@ -81,6 +81,14 @@ Run the API:
 PYTHONPATH=packages/research_core uvicorn apps.api.app.main:app --reload --port 8001
 ```
 
+Open the unified demo console:
+
+```text
+http://localhost:3000
+```
+
+Use **Run scripted fallback** for the reliable rehearsal path. It lets Meridian conduct Interview 1 without external API keys, emits the same canonical transcript shape, runs `/research/run-transcript`, and prepares the stakeholder PDF from `/report/from-transcript.pdf`. Use **Start Live (microphone)** when `ANTHROPIC_API_KEY` and `DEEPGRAM_API_KEY` are configured.
+
 Then call either loop mode:
 
 ```bash

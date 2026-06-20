@@ -1,9 +1,6 @@
 import { getDemoData } from "@/lib/api";
+import VoiceSession from "@/components/VoiceSession";
 import type { Finding, Question, Theme, TranscriptTurn } from "@/lib/fixtures";
-
-function scoreLabel(score: number) {
-  return `${Math.round(score * 100)}%`;
-}
 
 function trimText(text: string, maxLength: number) {
   if (text.length <= maxLength) return text;
@@ -46,9 +43,6 @@ function QuestionPreview({
                 broad baseline
               </span>
             )}
-            <span className="font-mono text-xs font-semibold text-[var(--muted)]">
-              {scoreLabel(question.specificity_score)} specificity
-            </span>
           </div>
           <h3 className="mt-2 text-base font-semibold leading-6">{question.primary}</h3>
           {emphasis ? (
@@ -168,7 +162,7 @@ export default async function Home() {
                 {liveBadge.label}
               </span>
               <span className="rounded-md bg-[var(--panel-strong)] px-3 py-1 font-mono text-xs font-semibold text-[var(--accent-ink)]">
-                transcript in, next guide out
+                transcript in, next AI plan out
               </span>
             </div>
             <p className="mt-5 text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
@@ -179,7 +173,7 @@ export default async function Home() {
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-[var(--muted)]">
               The product closes the gap between interviews. It reads the transcript, updates the
-              living insight document, and produces the next question guide so teams stop repeating
+              living insight document, and produces the next AI interview plan so teams stop repeating
               the same broad discovery script.
             </p>
           </div>
@@ -199,7 +193,7 @@ export default async function Home() {
               <div className="rounded-md bg-[var(--accent-wash)] p-3">
                 <p className="font-semibold text-[var(--accent-ink)]">Output</p>
                 <p className="text-[var(--muted)]">
-                  Updated insights plus an Interview 2 guide grounded in what changed.
+                  Updated insights plus an Interview 2 AI plan grounded in what changed.
                 </p>
               </div>
             </div>
@@ -236,11 +230,40 @@ export default async function Home() {
               />
               <LoopStep
                 step="4"
-                title="Generate the next guide"
-                body="The next question bank targets the gaps and evidence from the prior interview."
+                title="Generate the next AI plan"
+                body="The next AI interview plan targets the gaps and evidence from the prior interview."
               />
             </div>
           </div>
+        </section>
+
+        <section className="grid gap-5 border-b border-[var(--line)] pb-5 xl:grid-cols-[21rem_1fr]">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
+              Run the core demo
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold">Meridian conducts Interview 1</h2>
+            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+              Use the scripted fallback for a reliable rehearsal path, or live microphone mode when
+              Deepgram and Claude keys are configured. Either path emits the same transcript shape
+              and feeds the same adaptive loop.
+            </p>
+            <div className="mt-4 grid gap-2 text-sm">
+              <div className="rounded-md bg-[var(--panel-strong)] p-3">
+                <span className="font-semibold text-[var(--accent-ink)]">1. Interview</span>
+                <p className="mt-1 text-[var(--muted)]">Meridian asks the questions itself.</p>
+              </div>
+              <div className="rounded-md bg-[var(--panel-strong)] p-3">
+                <span className="font-semibold text-[var(--accent-ink)]">2. Synthesize</span>
+                <p className="mt-1 text-[var(--muted)]">The captured transcript updates insights.</p>
+              </div>
+              <div className="rounded-md bg-[var(--panel-strong)] p-3">
+                <span className="font-semibold text-[var(--accent-ink)]">3. Adapt</span>
+                <p className="mt-1 text-[var(--muted)]">Interview 2's AI plan and PDF appear live.</p>
+              </div>
+            </div>
+          </div>
+          <VoiceSession />
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
@@ -248,9 +271,9 @@ export default async function Home() {
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
               Starting point
             </p>
-            <h2 className="mt-2 text-2xl font-semibold">Interview 1 guide is broad</h2>
+            <h2 className="mt-2 text-2xl font-semibold">Interview 1 AI plan is broad</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-              Before customer evidence, the guide asks general workflow questions.
+              Before customer evidence, Meridian asks general workflow questions.
             </p>
             <div className="mt-4 space-y-3">
               {beforeQuestions.map((question, index) => (
@@ -263,9 +286,9 @@ export default async function Home() {
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
               Result of the loop
             </p>
-            <h2 className="mt-2 text-2xl font-semibold">Interview 2 guide is aimed at the gaps</h2>
+            <h2 className="mt-2 text-2xl font-semibold">Interview 2 AI plan is aimed at the gaps</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-              After the transcript is synthesized, the next guide targets synthesis behavior,
+              After the transcript is synthesized, the next plan targets synthesis behavior,
               context retrieval, and trust thresholds.
             </p>
             <div className="mt-4 space-y-3">
@@ -312,17 +335,17 @@ export default async function Home() {
         <section className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
           <div className="grid gap-3 md:grid-cols-3">
             <QualityCheck
-              label="Specificity check"
-              value={`+${specificityDelta} pts`}
-              detail={`The question-bank average moved from ${metrics.specificity_before.toFixed(2)} to ${metrics.specificity_after.toFixed(2)}.`}
+              label="Plan got sharper"
+              value="Adapted"
+              detail={`Supplemental specificity score moved from ${metrics.specificity_before.toFixed(2)} to ${metrics.specificity_after.toFixed(2)} (+${specificityDelta} pts).`}
             />
             <QualityCheck
-              label="Grounding check"
+              label="Evidence link"
               value={`${metrics.grounded_questions}/${questionBankAfter.questions.length}`}
-              detail="Generated follow-ups point back to evidence from the transcript."
+              detail="Generated follow-ups point back to Interview 1 evidence."
             />
             <QualityCheck
-              label="Synthesis check"
+              label="Insight update"
               value={`+${metrics.findings_added}`}
               detail="New findings were added to the living insight document."
             />

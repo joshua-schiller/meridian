@@ -115,6 +115,36 @@ class ResearchEndpointTests(unittest.TestCase):
         self.assertIn("Next AI Interview Plan", markdown.text)
         self.assertTrue(pdf.content.startswith(b"%PDF"))
 
+    def test_scripted_voice_session_emits_canonical_transcript_without_keys(self) -> None:
+        with warnings.catch_warnings(), patch.dict("os.environ", {}, clear=True):
+            warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
+            client = TestClient(app)
+
+            with client.websocket_connect("/voice/session?contact=maya_chen&scripted=true") as ws:
+                self.assertEqual(ws.receive_json()["type"], "ready")
+                opening = ws.receive_json()
+                self.assertEqual(opening["type"], "agent_text")
+
+                ws.send_json(
+                    {
+                        "type": "inject_text",
+                        "text": "Synthesis takes too long, so our next interview rarely gets sharper.",
+                    }
+                )
+                self.assertEqual(ws.receive_json()["type"], "transcript_final")
+                follow_up = ws.receive_json()
+                self.assertEqual(follow_up["type"], "agent_text")
+                self.assertIn("What makes discovery research difficult", follow_up["text"])
+
+                ws.send_json({"type": "end_session"})
+                complete = ws.receive_json()
+
+        self.assertEqual(complete["type"], "session_complete")
+        transcript = complete["transcript"]
+        self.assertEqual(transcript["source"], "fixture")
+        self.assertEqual(transcript["interviewee_id"], "pm_001")
+        self.assertGreaterEqual(len(transcript["turns"]), 3)
+
 
 if __name__ == "__main__":
     unittest.main()

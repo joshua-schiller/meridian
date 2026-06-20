@@ -3,9 +3,8 @@ from typing import Any
 import json
 
 from dotenv import load_dotenv
-load_dotenv()
-
 from fastapi import FastAPI, HTTPException, Response
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from research_core import (
@@ -27,17 +26,30 @@ from research_core.report import (
     render_report_pdf,
     report_to_markdown,
 )
+from .deepgram_voice import router as voice_router
+
+load_dotenv()
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 FIXTURES_DIR = ROOT_DIR / "fixtures"
 
-from .deepgram_voice import router as voice_router
-
 app = FastAPI(
     title="Meridian API",
     summary="Transcript-first discovery loop API skeleton.",
     version="0.1.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+    ],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 app.include_router(voice_router)

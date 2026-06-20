@@ -28,6 +28,10 @@ def _ant_key() -> str:
     return os.environ.get("ANTHROPIC_API_KEY", "")
 
 
+def _claude_model() -> str:
+    return os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-5")
+
+
 async def synthesize_speech(text: str) -> bytes:
     async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.post(
@@ -78,7 +82,7 @@ Rules:
 - Ask exactly ONE question"""
 
     response = await client.messages.create(
-        model="claude-sonnet-4-6",
+        model=_claude_model(),
         max_tokens=150,
         system=system,
         messages=[
@@ -113,6 +117,15 @@ class VoiceSession:
         self._counter += 1
         return f"t_{self._counter:03d}"
 
+    def _fallback_agent_response(self, question_idx: int) -> str:
+        if question_idx >= len(self.question_bank.questions):
+            return "Thank you, that gives me what I need for the next synthesis pass."
+
+        question = self.question_bank.questions[question_idx]
+        if question_idx == 0:
+            return question.primary
+        return f"That helps. {question.primary}"
+
     async def _send(self, payload: dict[str, Any]) -> None:
         await self.ws.send_text(json.dumps(payload))
 
@@ -127,6 +140,8 @@ class VoiceSession:
             )
         )
         await self._send({"type": "agent_text", "text": text, "turn_id": turn_id})
+        if not _dg_key():
+            return
         try:
             audio_bytes = await synthesize_speech(text)
             await self._send(
@@ -151,17 +166,20 @@ class VoiceSession:
         )
         await self._send({"type": "transcript_final", "text": text, "turn_id": turn_id})
 
-        if self.question_idx < len(self.question_bank.questions):
-            self.question_idx += 1
-
-        response = await generate_interviewer_response(
-            self.turns,
-            self.question_bank,
-            self.contact,
-            self.dossier,
-            self.question_idx,
-        )
+        question_idx = self.question_idx
+        if self.scripted or not _ant_key():
+            response = self._fallback_agent_response(question_idx)
+        else:
+            response = await generate_interviewer_response(
+                self.turns,
+                self.question_bank,
+                self.contact,
+                self.dossier,
+                question_idx,
+            )
         await self._agent_speak(response)
+        if question_idx < len(self.question_bank.questions):
+            self.question_idx += 1
 
     def _build_transcript(self) -> Transcript:
         return Transcript(

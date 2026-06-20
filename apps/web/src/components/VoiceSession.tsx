@@ -1,6 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type {
+  LivingInsightDocument,
+  QuestionBank,
+  Transcript,
+} from "@/lib/fixtures";
 
 type ServerMsg =
   | { type: "ready"; opening: string }
@@ -8,12 +13,27 @@ type ServerMsg =
   | { type: "agent_audio"; data: string; turn_id: string }
   | { type: "transcript_final"; text: string; turn_id: string }
   | { type: "tts_error"; message: string }
-  | { type: "session_complete"; transcript: Record<string, unknown> }
+  | { type: "session_complete"; transcript: Transcript }
   | { type: "error"; message: string };
 
 type Turn = { id: string; speaker: "agent" | "interviewee"; text: string };
 
 type Status = "idle" | "connecting" | "live" | "done" | "error";
+type PipelineStatus = "idle" | "running" | "ready" | "error";
+
+type LoopMetrics = {
+  specificity_before: number;
+  specificity_after: number;
+  findings_added: number;
+  grounded_questions: number;
+  mode: string;
+};
+
+type AdaptiveLoopResponse = {
+  insight_doc_after: LivingInsightDocument;
+  question_bank_after: QuestionBank;
+  metrics: LoopMetrics;
+};
 
 const SCRIPTED_RESPONSES = [
   "Honestly the biggest issue is that by the time I get a synthesis doc from the research team, we've already made half the decisions. The bottleneck isn't the interviews themselves, it's how long it takes to turn them into something actionable.",
@@ -23,15 +43,18 @@ const SCRIPTED_RESPONSES = [
 
 const API_WS_BASE =
   process.env.NEXT_PUBLIC_API_WS_URL ?? "ws://localhost:8001";
+const API_HTTP_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8001";
 
 export default function VoiceSession() {
   const [status, setStatus] = useState<Status>("idle");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [scriptedIdx, setScriptedIdx] = useState(0);
-  const [finalTranscript, setFinalTranscript] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
+  const [finalTranscript, setFinalTranscript] = useState<Transcript | null>(null);
+  const [loopStatus, setLoopStatus] = useState<PipelineStatus>("idle");
+  const [reportStatus, setReportStatus] = useState<PipelineStatus>("idle");
+  const [adaptiveLoop, setAdaptiveLoop] = useState<AdaptiveLoopResponse | null>(null);
+  const [reportUrl, setReportUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -39,6 +62,7 @@ export default function VoiceSession() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const scriptedResponsesDone = scriptedIdx >= SCRIPTED_RESPONSES.length;
 
   const stopMic = useCallback(() => {
     processorRef.current?.disconnect();
@@ -53,6 +77,12 @@ export default function VoiceSession() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [turns]);
 
+  useEffect(() => {
+    return () => {
+      if (reportUrl) URL.revokeObjectURL(reportUrl);
+    };
+  }, [reportUrl]);
+
   const playAudio = useCallback((base64Data: string) => {
     const bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
     const blob = new Blob([bytes], { type: "audio/mpeg" });
@@ -60,6 +90,50 @@ export default function VoiceSession() {
     const audio = new Audio(url);
     audio.play().catch(console.error);
     audio.onended = () => URL.revokeObjectURL(url);
+  }, []);
+
+  const runPostInterviewPipeline = useCallback(async (transcript: Transcript) => {
+    setAdaptiveLoop(null);
+    setLoopStatus("running");
+    setReportStatus("idle");
+    setErrorMsg("");
+    const body = JSON.stringify({ transcript });
+
+    try {
+      const loopResponse = await fetch(`${API_HTTP_BASE}/research/run-transcript`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+      if (!loopResponse.ok) {
+        throw new Error(`Adaptive loop failed (${loopResponse.status})`);
+      }
+      const loopPayload = (await loopResponse.json()) as AdaptiveLoopResponse;
+      setAdaptiveLoop(loopPayload);
+      setLoopStatus("ready");
+    } catch (error) {
+      setLoopStatus("error");
+      setErrorMsg(error instanceof Error ? error.message : "Adaptive loop failed.");
+      return;
+    }
+
+    setReportStatus("running");
+    try {
+      const reportResponse = await fetch(`${API_HTTP_BASE}/report/from-transcript.pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+      if (!reportResponse.ok) {
+        throw new Error(`PDF generation failed (${reportResponse.status})`);
+      }
+      const blob = await reportResponse.blob();
+      setReportUrl(URL.createObjectURL(blob));
+      setReportStatus("ready");
+    } catch (error) {
+      setReportStatus("error");
+      setErrorMsg(error instanceof Error ? error.message : "PDF generation failed.");
+    }
   }, []);
 
   const handleMessage = useCallback(
@@ -82,6 +156,7 @@ export default function VoiceSession() {
         case "session_complete":
           setFinalTranscript(msg.transcript);
           setStatus("done");
+          void runPostInterviewPipeline(msg.transcript);
           break;
         case "error":
         case "tts_error":
@@ -89,7 +164,7 @@ export default function VoiceSession() {
           break;
       }
     },
-    [playAudio],
+    [playAudio, runPostInterviewPipeline],
   );
 
   const connect = useCallback(
@@ -98,6 +173,10 @@ export default function VoiceSession() {
       setTurns([]);
       setScriptedIdx(0);
       setFinalTranscript(null);
+      setAdaptiveLoop(null);
+      setLoopStatus("idle");
+      setReportStatus("idle");
+      setReportUrl(null);
       setErrorMsg("");
 
       // Acquire the mic BEFORE opening the socket so we can fail cleanly.
@@ -179,6 +258,10 @@ export default function VoiceSession() {
     setTurns([]);
     setScriptedIdx(0);
     setFinalTranscript(null);
+    setAdaptiveLoop(null);
+    setLoopStatus("idle");
+    setReportStatus("idle");
+    setReportUrl(null);
     setErrorMsg("");
   }, []);
 
@@ -191,7 +274,7 @@ export default function VoiceSession() {
             onClick={() => connect(true)}
             className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
           >
-            Start Demo (scripted)
+            Run scripted fallback
           </button>
           <button
             onClick={() => connect(false)}
@@ -214,10 +297,12 @@ export default function VoiceSession() {
           </span>
           <button
             onClick={injectScriptedResponse}
-            disabled={scriptedIdx >= SCRIPTED_RESPONSES.length}
+            disabled={scriptedResponsesDone}
             className="ml-auto rounded-md bg-[var(--panel-strong)] px-3 py-1.5 text-xs font-semibold disabled:opacity-40"
           >
-            Inject Maya's response ({scriptedIdx + 1}/{SCRIPTED_RESPONSES.length})
+            {scriptedResponsesDone
+              ? "All scripted responses sent"
+              : `Inject Maya's response (${scriptedIdx + 1}/${SCRIPTED_RESPONSES.length})`}
           </button>
           <button
             onClick={endSession}
@@ -265,18 +350,84 @@ export default function VoiceSession() {
 
       {/* Session complete */}
       {status === "done" && finalTranscript && (
-        <div className="rounded-lg border border-[var(--accent)] bg-[var(--panel)] p-4">
-          <p className="font-semibold text-[var(--accent)]">Session complete</p>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            {String(finalTranscript.summary ?? "")}
-          </p>
-          <p className="mt-1 font-mono text-xs text-[var(--muted)]">
-            id: {String(finalTranscript.id ?? "")}
-          </p>
-          <p className="mt-3 text-xs text-[var(--muted)]">
-            This transcript is now ready to feed the adaptive loop — run the research endpoint to
-            generate Interview 2&apos;s sharper question bank.
-          </p>
+        <div className="space-y-4 rounded-lg border border-[var(--accent)] bg-[var(--panel)] p-4">
+          <div>
+            <p className="font-semibold text-[var(--accent)]">Interview complete</p>
+            <p className="mt-1 text-sm text-[var(--muted)]">{finalTranscript.summary}</p>
+            <p className="mt-1 font-mono text-xs text-[var(--muted)]">
+              transcript: {finalTranscript.id}
+            </p>
+          </div>
+
+          <div className="grid gap-2 text-sm md:grid-cols-3">
+            <div className="rounded-md border border-[var(--line)] p-3">
+              <span className="font-mono text-xs uppercase text-[var(--muted)]">Step 1</span>
+              <p className="mt-1 font-semibold">Transcript captured</p>
+            </div>
+            <div className="rounded-md border border-[var(--line)] p-3">
+              <span className="font-mono text-xs uppercase text-[var(--muted)]">Step 2</span>
+              <p className="mt-1 font-semibold">
+                {loopStatus === "ready"
+                  ? "Interview 2 plan ready"
+                  : loopStatus === "running"
+                    ? "Synthesizing..."
+                    : loopStatus === "error"
+                      ? "Loop needs attention"
+                      : "Waiting"}
+              </p>
+            </div>
+            <div className="rounded-md border border-[var(--line)] p-3">
+              <span className="font-mono text-xs uppercase text-[var(--muted)]">Step 3</span>
+              <p className="mt-1 font-semibold">
+                {reportStatus === "ready"
+                  ? "PDF ready"
+                  : reportStatus === "running"
+                    ? "Rendering PDF..."
+                    : reportStatus === "error"
+                      ? "PDF needs attention"
+                      : "Waiting"}
+              </p>
+            </div>
+          </div>
+
+          {adaptiveLoop && (
+            <div className="rounded-md border border-[var(--line)] bg-white p-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold">Next Meridian Interview Plan</p>
+                  <p className="text-xs text-[var(--muted)]">
+                    Generated from {finalTranscript.turns.length} captured turns for Interview{" "}
+                    {adaptiveLoop.question_bank_after.interview_number}.
+                  </p>
+                </div>
+                {reportUrl && (
+                  <a
+                    href={reportUrl}
+                    download="meridian-discovery-report.pdf"
+                    className="w-fit rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90"
+                  >
+                    Download PDF
+                  </a>
+                )}
+              </div>
+              <div className="mt-3 space-y-2">
+                {adaptiveLoop.question_bank_after.questions.slice(0, 2).map((question) => (
+                  <div key={question.id} className="rounded-md bg-[var(--panel-strong)] p-3">
+                    <p className="text-sm font-medium leading-6">{question.primary}</p>
+                    {question.grounding.length > 0 ? (
+                      <p className="mt-1 text-xs text-[var(--muted)]">
+                        Grounded in: {question.grounding.join("; ")}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-[var(--muted)]">
+                        Why Meridian asks: {question.rationale_gap}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
