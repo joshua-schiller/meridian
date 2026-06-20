@@ -95,6 +95,19 @@ curl "http://localhost:8001/demo/report/markdown?mode=deterministic"
 curl -o artifacts/demo_report.pdf "http://localhost:8001/demo/report.pdf?mode=deterministic"
 ```
 
+Feed a completed voice transcript into the adaptive loop and report path:
+
+```bash
+curl -X POST "http://localhost:8001/research/run-transcript?mode=deterministic" \
+  -H "Content-Type: application/json" \
+  --data '{"transcript": { ... canonical Transcript ... }}'
+
+curl -X POST "http://localhost:8001/report/from-transcript.pdf?mode=deterministic" \
+  -H "Content-Type: application/json" \
+  --data '{"transcript": { ... canonical Transcript ... }}' \
+  -o artifacts/live_transcript_report.pdf
+```
+
 ## Immediate Work Split
 
 Joshua should extend `packages/research_core/**`, `fixtures/**`, and the research/report/Redis API paths from the deterministic fixture loop into Claude-backed synthesis, Redis persistence, and PDF reporting.

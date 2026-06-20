@@ -19,11 +19,16 @@ Current endpoints:
 - `GET /demo/report/markdown`
 - `GET /demo/report.pdf`
 - `POST /research/run-fixture`
+- `POST /research/run-transcript`
+- `POST /report/from-transcript/markdown`
+- `POST /report/from-transcript.pdf`
 
 The API reads the same fixture files used by the web app and validates them through `packages/research_core`.
 
 `/research/run-fixture` returns the full P0 loop payload: transcript, before/after insight docs, before/after question banks, loop evidence, and specificity metrics.
 
 `/demo/report/markdown` and `/demo/report.pdf` generate the stakeholder-ready report from the same loop payload. The report frames the question bank as Meridian's next AI interview plan, not as a human-led guide.
+
+`/research/run-transcript` accepts `{ "transcript": <canonical Transcript> }` from the voice session and returns the same adaptive-loop payload. `/report/from-transcript/markdown` and `/report/from-transcript.pdf` accept the same body and generate the report directly from that transcript. If prior insight docs, contact, dossier, or baseline question bank are omitted, the API uses the demo defaults.
 
 Use `mode=deterministic`, `mode=auto`, or `mode=claude`. Claude mode requires `ANTHROPIC_API_KEY`; `CLAUDE_MODEL` defaults to `claude-sonnet-4-5`.
