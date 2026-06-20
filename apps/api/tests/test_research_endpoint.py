@@ -1,3 +1,5 @@
+from pathlib import Path
+import json
 import unittest
 import warnings
 from unittest.mock import patch
@@ -5,6 +7,13 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from apps.api.app.main import app
+
+
+FIXTURES_DIR = Path(__file__).resolve().parents[3] / "fixtures"
+
+
+def load_fixture_transcript() -> dict:
+    return json.loads((FIXTURES_DIR / "transcripts/interview_1_maya_chen.json").read_text())
 
 
 class ResearchEndpointTests(unittest.TestCase):
@@ -72,6 +81,39 @@ class ResearchEndpointTests(unittest.TestCase):
         self.assertEqual(response.headers["content-type"], "application/pdf")
         self.assertTrue(response.content.startswith(b"%PDF"))
         self.assertIn("meridian-discovery-report.pdf", response.headers["content-disposition"])
+
+    def test_run_transcript_endpoint_accepts_canonical_transcript(self) -> None:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
+            client = TestClient(app)
+
+        response = client.post(
+            "/research/run-transcript",
+            json={"transcript": load_fixture_transcript()},
+        )
+
+        response.raise_for_status()
+        payload = response.json()
+        self.assertEqual(payload["transcript"]["id"], "transcript_interview_001")
+        self.assertEqual(payload["question_bank_after"]["interview_number"], 2)
+        self.assertEqual(
+            payload["metrics"]["grounded_questions"],
+            len(payload["question_bank_after"]["questions"]),
+        )
+
+    def test_report_from_transcript_endpoints_accept_canonical_transcript(self) -> None:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
+            client = TestClient(app)
+        body = {"transcript": load_fixture_transcript()}
+
+        markdown = client.post("/report/from-transcript/markdown", json=body)
+        pdf = client.post("/report/from-transcript.pdf", json=body)
+
+        markdown.raise_for_status()
+        pdf.raise_for_status()
+        self.assertIn("Next AI Interview Plan", markdown.text)
+        self.assertTrue(pdf.content.startswith(b"%PDF"))
 
 
 if __name__ == "__main__":
