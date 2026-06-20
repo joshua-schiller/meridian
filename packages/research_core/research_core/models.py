@@ -90,3 +90,22 @@ class LivingInsightDocument(BaseModel):
     themes: list[InsightTheme] = Field(default_factory=list)
     open_questions: list[str] = Field(default_factory=list)
     contradictions: list[Contradiction] = Field(default_factory=list)
+
+
+class LoopEvidence(BaseModel):
+    id: str
+    finding_id: str
+    question_id: str | None = None
+    interviewee: str
+    quote: str
+    takeaway: str
+
+
+class LoopResult(BaseModel):
+    id: str
+    transcript: Transcript
+    prior_insight_doc: LivingInsightDocument
+    updated_insight_doc: LivingInsightDocument
+    next_question_bank: QuestionBank
+    evidence: list[LoopEvidence] = Field(default_factory=list)
+    summary: str

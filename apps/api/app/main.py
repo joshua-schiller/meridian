@@ -5,6 +5,8 @@ import json
 from fastapi import FastAPI
 
 from research_core import Contact, Dossier, LivingInsightDocument, QuestionBank, Transcript
+from research_core.fixture_io import load_demo_inputs
+from research_core.loop import average_specificity, run_adaptive_loop
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
@@ -56,6 +58,46 @@ def demo_fixtures() -> dict[str, Any]:
             insight_after_interview_1.model_dump(mode="json"),
         ],
     }
+
+
+def build_demo_loop_payload() -> dict[str, Any]:
+    contact, dossier, transcript, prior_insight_doc, baseline_question_bank = load_demo_inputs(FIXTURES_DIR)
+    result = run_adaptive_loop(
+        transcript=transcript,
+        prior_insight_doc=prior_insight_doc,
+        contact=contact,
+        dossier=dossier,
+    )
+
+    return {
+        "transcript": transcript.model_dump(mode="json"),
+        "insight_doc_before": prior_insight_doc.model_dump(mode="json"),
+        "insight_doc_after": result.updated_insight_doc.model_dump(mode="json"),
+        "question_bank_before": baseline_question_bank.model_dump(mode="json"),
+        "question_bank_after": result.next_question_bank.model_dump(mode="json"),
+        "loop_result": result.model_dump(mode="json"),
+        "metrics": {
+            "specificity_before": average_specificity(baseline_question_bank),
+            "specificity_after": average_specificity(result.next_question_bank),
+            "findings_added": sum(
+                len(theme.findings) for theme in result.updated_insight_doc.themes
+            )
+            - sum(len(theme.findings) for theme in prior_insight_doc.themes),
+            "grounded_questions": sum(
+                1 for question in result.next_question_bank.questions if question.grounding
+            ),
+        },
+    }
+
+
+@app.get("/demo/adaptive-loop")
+def demo_adaptive_loop() -> dict[str, Any]:
+    return build_demo_loop_payload()
+
+
+@app.post("/research/run-fixture")
+def research_run_fixture() -> dict[str, Any]:
+    return build_demo_loop_payload()
 
 
 @app.get("/demo/transcript/interview-1")

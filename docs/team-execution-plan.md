@@ -15,7 +15,7 @@ The split is intentional: Joshua owns whether the product thesis is compelling; 
 
 The initial scaffold and shared fixture contracts now exist on `main`.
 
-Before deep parallel work, both people should pull the latest `origin/main` and branch from the committed scaffold. Treat `packages/research_core/research_core/models.py` and the JSON files under `fixtures/**` as the first shared contract.
+Before deep parallel work, both people should pull the latest `origin/main` and branch from the committed scaffold. Treat `packages/research_core/research_core/models.py` and the JSON files under `fixtures/**` as the first shared contract. The P0 fixture loop should be exposed through `python3 -m research_core.run_fixture fixtures` and `POST /research/run-fixture`.
 
 ## Worktrees
 

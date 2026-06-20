@@ -38,6 +38,18 @@ Validate the shared fixtures:
 PYTHONPATH=packages/research_core python3 -m research_core.validate_fixtures fixtures
 ```
 
+Run the deterministic adaptive loop on fixtures:
+
+```bash
+PYTHONPATH=packages/research_core python3 -m research_core.run_fixture fixtures
+```
+
+Run the core regression tests:
+
+```bash
+PYTHONPATH=packages/research_core python3 -m unittest discover -s packages/research_core/tests
+```
+
 Run the web app:
 
 ```bash
@@ -52,6 +64,6 @@ PYTHONPATH=packages/research_core uvicorn apps.api.app.main:app --reload --port 
 
 ## Immediate Work Split
 
-Joshua should extend `packages/research_core/**`, `fixtures/**`, and the research/report/Redis API paths into the working adaptive loop.
+Joshua should extend `packages/research_core/**`, `fixtures/**`, and the research/report/Redis API paths from the deterministic fixture loop into Claude-backed synthesis, Redis persistence, and PDF reporting.
 
 Bilguun should extend `apps/web/**` into the polished demo money shot and then wire the Deepgram voice path into the canonical transcript shape.
