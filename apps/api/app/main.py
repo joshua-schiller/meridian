@@ -2,13 +2,19 @@ from pathlib import Path
 from typing import Any
 import json
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 
 from research_core import Contact, Dossier, LivingInsightDocument, LoopMode, QuestionBank, Transcript
 from research_core.claude_loop import ClaudeLoopError
 from research_core.fixture_io import load_demo_inputs
 from research_core.loop import average_specificity
 from research_core.pipeline import run_loop
+from research_core.report import (
+    StakeholderReport,
+    build_stakeholder_report,
+    render_report_pdf,
+    report_to_markdown,
+)
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
@@ -97,6 +103,27 @@ def build_demo_loop_payload(mode: LoopMode = "deterministic") -> dict[str, Any]:
     }
 
 
+def build_demo_report(mode: LoopMode = "deterministic") -> StakeholderReport:
+    contact, dossier, transcript, prior_insight_doc, baseline_question_bank = load_demo_inputs(FIXTURES_DIR)
+    try:
+        result = run_loop(
+            transcript=transcript,
+            prior_insight_doc=prior_insight_doc,
+            contact=contact,
+            dossier=dossier,
+            mode=mode,
+        )
+    except ClaudeLoopError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return build_stakeholder_report(
+        loop_result=result,
+        contact=contact,
+        dossier=dossier,
+        baseline_question_bank=baseline_question_bank,
+    )
+
+
 @app.get("/demo/adaptive-loop")
 def demo_adaptive_loop(mode: LoopMode = "deterministic") -> dict[str, Any]:
     return build_demo_loop_payload(mode)
@@ -105,6 +132,25 @@ def demo_adaptive_loop(mode: LoopMode = "deterministic") -> dict[str, Any]:
 @app.post("/research/run-fixture")
 def research_run_fixture(mode: LoopMode = "deterministic") -> dict[str, Any]:
     return build_demo_loop_payload(mode)
+
+
+@app.get("/demo/report/markdown")
+def demo_report_markdown(mode: LoopMode = "deterministic") -> Response:
+    report = build_demo_report(mode)
+    return Response(
+        content=report_to_markdown(report),
+        media_type="text/markdown",
+    )
+
+
+@app.get("/demo/report.pdf")
+def demo_report_pdf(mode: LoopMode = "deterministic") -> Response:
+    report = build_demo_report(mode)
+    return Response(
+        content=render_report_pdf(report),
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'inline; filename="meridian-discovery-report.pdf"'},
+    )
 
 
 @app.get("/demo/transcript/interview-1")

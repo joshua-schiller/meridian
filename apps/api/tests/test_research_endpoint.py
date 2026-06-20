@@ -49,6 +49,30 @@ class ResearchEndpointTests(unittest.TestCase):
         payload = response.json()
         self.assertEqual(payload["loop_result"]["id"], "loop_after_interview_001")
 
+    def test_demo_report_markdown_endpoint_returns_stakeholder_report(self) -> None:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
+            client = TestClient(app)
+
+        response = client.get("/demo/report/markdown")
+
+        response.raise_for_status()
+        self.assertEqual(response.headers["content-type"], "text/markdown; charset=utf-8")
+        self.assertIn("Meridian Discovery Report", response.text)
+        self.assertIn("Next AI Interview Plan", response.text)
+
+    def test_demo_report_pdf_endpoint_returns_pdf(self) -> None:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
+            client = TestClient(app)
+
+        response = client.get("/demo/report.pdf")
+
+        response.raise_for_status()
+        self.assertEqual(response.headers["content-type"], "application/pdf")
+        self.assertTrue(response.content.startswith(b"%PDF"))
+        self.assertIn("meridian-discovery-report.pdf", response.headers["content-disposition"])
+
 
 if __name__ == "__main__":
     unittest.main()

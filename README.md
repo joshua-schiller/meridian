@@ -88,6 +88,13 @@ curl -X POST "http://localhost:8001/research/run-fixture?mode=deterministic"
 curl -X POST "http://localhost:8001/research/run-fixture?mode=claude"
 ```
 
+Generate the stakeholder report from the demo loop:
+
+```bash
+curl "http://localhost:8001/demo/report/markdown?mode=deterministic"
+curl -o artifacts/demo_report.pdf "http://localhost:8001/demo/report.pdf?mode=deterministic"
+```
+
 ## Immediate Work Split
 
 Joshua should extend `packages/research_core/**`, `fixtures/**`, and the research/report/Redis API paths from the deterministic fixture loop into Claude-backed synthesis, Redis persistence, and PDF reporting.

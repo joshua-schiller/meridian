@@ -13,6 +13,7 @@ from .models import (
     TranscriptTurn,
 )
 from .pipeline import LoopMode, run_loop
+from .report import StakeholderReport, build_stakeholder_report, render_report_pdf, report_to_markdown
 
 __all__ = [
     "Contact",
@@ -29,4 +30,8 @@ __all__ = [
     "TranscriptTurn",
     "LoopMode",
     "run_loop",
+    "StakeholderReport",
+    "build_stakeholder_report",
+    "render_report_pdf",
+    "report_to_markdown",
 ]
