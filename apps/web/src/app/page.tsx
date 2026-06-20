@@ -167,15 +167,24 @@ export default async function Home() {
               Research goal
             </p>
             <p className="mt-2 text-base font-semibold leading-7">{transcript.research_goal}</p>
+            <div className="mt-4 rounded-md bg-[var(--panel-strong)] p-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+                Question specificity score
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                Average across the generated question bank. Higher means the questions are
+                narrower, more evidence-linked follow-ups.
+              </p>
+            </div>
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-md bg-[var(--panel-strong)] p-3">
-                <p className="text-[var(--muted)]">Before</p>
+              <div className="rounded-md border border-[var(--line)] p-3">
+                <p className="text-[var(--muted)]">First guide</p>
                 <p className="mt-1 font-mono font-semibold">
                   {scoreLabel(averageScore(questionBankBefore.questions))}
                 </p>
               </div>
               <div className="rounded-md bg-[var(--accent-wash)] p-3">
-                <p className="text-[var(--muted)]">After</p>
+                <p className="text-[var(--muted)]">Next guide</p>
                 <p className="mt-1 font-mono font-semibold text-[var(--accent-ink)]">
                   {scoreLabel(averageScore(questionBankAfter.questions))}
                 </p>
@@ -186,9 +195,9 @@ export default async function Home() {
 
         <section className="grid gap-3 md:grid-cols-3">
           <Metric
-            label="Specificity lift"
+            label="Question specificity lift"
             value={`+${specificityDelta} pts`}
-            detail={`${metrics.specificity_before.toFixed(2)} to ${metrics.specificity_after.toFixed(2)}`}
+            detail={`Average question score: ${metrics.specificity_before.toFixed(2)} to ${metrics.specificity_after.toFixed(2)}`}
           />
           <Metric
             label="Grounded questions"
