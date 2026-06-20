@@ -1,13 +1,25 @@
-import { readDemoFixtures } from "@/lib/fixtures";
+import { getDemoData } from "@/lib/api";
 
 function scoreLabel(score: number) {
   return `${Math.round(score * 100)}% specificity`;
 }
 
 export default async function Home() {
-  const { contact, dossier, transcript, questionBanks, insightDocs } = await readDemoFixtures();
-  const [questionBankOne, questionBankTwo] = questionBanks;
-  const [, insightAfterInterviewOne] = insightDocs;
+  const {
+    contact,
+    dossier,
+    transcript,
+    questionBankBefore,
+    questionBankAfter,
+    insightAfter,
+    metrics,
+    source,
+  } = await getDemoData("deterministic");
+
+  const liveBadge =
+    source === "api"
+      ? { label: `Live loop · ${metrics.mode}`, cls: "bg-[var(--accent)] text-white" }
+      : { label: "Fixture fallback", cls: "bg-[var(--warn)] text-white" };
 
   return (
     <main className="min-h-screen px-5 py-6 md:px-8">
@@ -28,6 +40,20 @@ export default async function Home() {
             </strong>
           </div>
         </header>
+
+        {/* Live loop status — proves the money shot is computed, not hardcoded. */}
+        <section className="flex flex-wrap items-center gap-2 text-xs">
+          <span className={`rounded-full px-3 py-1 font-semibold ${liveBadge.cls}`}>{liveBadge.label}</span>
+          <span className="rounded-full bg-[var(--panel-strong)] px-3 py-1 font-mono text-[var(--accent-ink)]">
+            specificity {metrics.specificity_before.toFixed(2)} &rarr; {metrics.specificity_after.toFixed(2)}
+          </span>
+          <span className="rounded-full bg-[var(--panel-strong)] px-3 py-1 font-mono text-[var(--accent-ink)]">
+            {metrics.grounded_questions}/{questionBankAfter.questions.length} grounded
+          </span>
+          <span className="rounded-full bg-[var(--panel-strong)] px-3 py-1 font-mono text-[var(--accent-ink)]">
+            +{metrics.findings_added} findings
+          </span>
+        </section>
 
         <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
@@ -74,7 +100,7 @@ export default async function Home() {
         </section>
 
         <section className="grid gap-4 lg:grid-cols-2">
-          {[questionBankOne, questionBankTwo].map((bank) => (
+          {[questionBankBefore, questionBankAfter].map((bank) => (
             <article key={bank.id} className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -115,10 +141,10 @@ export default async function Home() {
                 Updated themes, open questions, and contradictions become the next question bank.
               </p>
             </div>
-            <span className="font-mono text-xs text-[var(--muted)]">{insightAfterInterviewOne.id}</span>
+            <span className="font-mono text-xs text-[var(--muted)]">{insightAfter.id}</span>
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-3">
-            {insightAfterInterviewOne.themes.map((theme) => (
+            {insightAfter.themes.map((theme) => (
               <div key={theme.id} className="rounded-md border border-[var(--line)] p-3">
                 <h3 className="font-semibold">{theme.label}</h3>
                 <ul className="mt-3 space-y-3 text-sm leading-6">
