@@ -21,3 +21,5 @@ Current endpoints:
 The API reads the same fixture files used by the web app and validates them through `packages/research_core`.
 
 `/research/run-fixture` returns the full P0 loop payload: transcript, before/after insight docs, before/after question banks, loop evidence, and specificity metrics.
+
+Use `mode=deterministic`, `mode=auto`, or `mode=claude`. Claude mode requires `ANTHROPIC_API_KEY`; `CLAUDE_MODEL` defaults to `claude-sonnet-4-5`.

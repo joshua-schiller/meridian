@@ -44,6 +44,16 @@ Run the deterministic adaptive loop on fixtures:
 PYTHONPATH=packages/research_core python3 -m research_core.run_fixture fixtures
 ```
 
+Run the loop through Claude when `ANTHROPIC_API_KEY` is configured:
+
+```bash
+export ANTHROPIC_API_KEY=...
+export CLAUDE_MODEL=claude-sonnet-4-5
+PYTHONPATH=packages/research_core python3 -m research_core.run_fixture fixtures --mode claude
+```
+
+`--mode auto` uses Claude only when `ANTHROPIC_API_KEY` is present, otherwise it keeps the deterministic fallback.
+
 Run the core regression tests:
 
 ```bash
@@ -60,6 +70,13 @@ Run the API:
 
 ```bash
 PYTHONPATH=packages/research_core uvicorn apps.api.app.main:app --reload --port 8001
+```
+
+Then call either loop mode:
+
+```bash
+curl -X POST "http://localhost:8001/research/run-fixture?mode=deterministic"
+curl -X POST "http://localhost:8001/research/run-fixture?mode=claude"
 ```
 
 ## Immediate Work Split

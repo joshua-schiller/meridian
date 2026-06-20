@@ -5,6 +5,7 @@ description = "Core Meridian research-loop contracts and utilities."
 requires-python = ">=3.12"
 dependencies = [
   "pydantic>=2.8.0",
+  "anthropic>=0.111.0",
 ]
 
 [build-system]

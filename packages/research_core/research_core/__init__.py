@@ -12,6 +12,7 @@ from .models import (
     Transcript,
     TranscriptTurn,
 )
+from .pipeline import LoopMode, run_loop
 
 __all__ = [
     "Contact",
@@ -26,4 +27,6 @@ __all__ = [
     "SupportingQuote",
     "Transcript",
     "TranscriptTurn",
+    "LoopMode",
+    "run_loop",
 ]

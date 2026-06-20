@@ -1,5 +1,6 @@
 import unittest
 import warnings
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -26,6 +27,27 @@ class ResearchEndpointTests(unittest.TestCase):
             len(payload["question_bank_after"]["questions"]),
         )
         self.assertIn("loop_result", payload)
+
+    def test_claude_mode_without_key_returns_clear_400(self) -> None:
+        with warnings.catch_warnings(), patch.dict("os.environ", {}, clear=True):
+            warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
+            client = TestClient(app)
+
+            response = client.post("/research/run-fixture?mode=claude")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("ANTHROPIC_API_KEY", response.json()["detail"])
+
+    def test_auto_mode_without_key_uses_deterministic_loop(self) -> None:
+        with warnings.catch_warnings(), patch.dict("os.environ", {}, clear=True):
+            warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
+            client = TestClient(app)
+
+            response = client.post("/research/run-fixture?mode=auto")
+
+        response.raise_for_status()
+        payload = response.json()
+        self.assertEqual(payload["loop_result"]["id"], "loop_after_interview_001")
 
 
 if __name__ == "__main__":

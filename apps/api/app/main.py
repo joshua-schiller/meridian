@@ -2,11 +2,13 @@ from pathlib import Path
 from typing import Any
 import json
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
-from research_core import Contact, Dossier, LivingInsightDocument, QuestionBank, Transcript
+from research_core import Contact, Dossier, LivingInsightDocument, LoopMode, QuestionBank, Transcript
+from research_core.claude_loop import ClaudeLoopError
 from research_core.fixture_io import load_demo_inputs
-from research_core.loop import average_specificity, run_adaptive_loop
+from research_core.loop import average_specificity
+from research_core.pipeline import run_loop
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
@@ -60,14 +62,18 @@ def demo_fixtures() -> dict[str, Any]:
     }
 
 
-def build_demo_loop_payload() -> dict[str, Any]:
+def build_demo_loop_payload(mode: LoopMode = "deterministic") -> dict[str, Any]:
     contact, dossier, transcript, prior_insight_doc, baseline_question_bank = load_demo_inputs(FIXTURES_DIR)
-    result = run_adaptive_loop(
-        transcript=transcript,
-        prior_insight_doc=prior_insight_doc,
-        contact=contact,
-        dossier=dossier,
-    )
+    try:
+        result = run_loop(
+            transcript=transcript,
+            prior_insight_doc=prior_insight_doc,
+            contact=contact,
+            dossier=dossier,
+            mode=mode,
+        )
+    except ClaudeLoopError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return {
         "transcript": transcript.model_dump(mode="json"),
@@ -86,18 +92,19 @@ def build_demo_loop_payload() -> dict[str, Any]:
             "grounded_questions": sum(
                 1 for question in result.next_question_bank.questions if question.grounding
             ),
+            "mode": mode,
         },
     }
 
 
 @app.get("/demo/adaptive-loop")
-def demo_adaptive_loop() -> dict[str, Any]:
-    return build_demo_loop_payload()
+def demo_adaptive_loop(mode: LoopMode = "deterministic") -> dict[str, Any]:
+    return build_demo_loop_payload(mode)
 
 
 @app.post("/research/run-fixture")
-def research_run_fixture() -> dict[str, Any]:
-    return build_demo_loop_payload()
+def research_run_fixture(mode: LoopMode = "deterministic") -> dict[str, Any]:
+    return build_demo_loop_payload(mode)
 
 
 @app.get("/demo/transcript/interview-1")
