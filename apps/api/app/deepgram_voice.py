@@ -202,52 +202,70 @@ class VoiceSession:
             pass
 
     async def _run_deepgram_session(self) -> None:
-        from deepgram import DeepgramClient, LiveTranscriptionEvents, LiveOptions
+        # Connect to Deepgram's live STT WebSocket directly. We send raw 16kHz
+        # mono linear16 PCM (the browser captures it via Web Audio), so we tell
+        # Deepgram the exact encoding rather than relying on container sniffing.
+        from websockets.asyncio.client import connect as ws_connect
 
-        transcript_queue: asyncio.Queue[str | None] = asyncio.Queue()
-        loop = asyncio.get_event_loop()
-
-        dg = DeepgramClient(_dg_key())
-        dg_conn = dg.listen.websocket.v("1")
-
-        def on_transcript(_self: Any, result: Any, **_kwargs: Any) -> None:
-            alt = result.channel.alternatives[0]
-            if result.is_final and alt.transcript.strip():
-                loop.call_soon_threadsafe(transcript_queue.put_nowait, alt.transcript)
-
-        dg_conn.on(LiveTranscriptionEvents.Transcript, on_transcript)
-
-        from deepgram import LiveOptions as LiveOpts
-        options = LiveOpts(
-            model="nova-2",
-            language="en-US",
-            smart_format=True,
-            interim_results=False,
-            utterance_end_ms=1200,
+        # Note: utterance_end_ms requires interim_results=true, so we use
+        # endpointing instead to get is_final segments on speech pauses.
+        dg_url = (
+            "wss://api.deepgram.com/v1/listen"
+            "?encoding=linear16&sample_rate=16000&channels=1"
+            "&model=nova-2&language=en-US&smart_format=true"
+            "&interim_results=false&endpointing=300"
         )
 
-        started = await asyncio.to_thread(dg_conn.start, options)
-        if not started:
-            await self._send({"type": "error", "message": "Deepgram STT connection failed"})
+        try:
+            dg_ws = await ws_connect(
+                dg_url,
+                additional_headers={"Authorization": f"Token {_dg_key()}"},
+                max_size=None,
+            )
+        except Exception as exc:
+            await self._send(
+                {"type": "error", "message": f"Deepgram STT connect failed: {exc}"}
+            )
             return
 
-        async def forward_audio() -> None:
+        transcript_queue: asyncio.Queue[str | None] = asyncio.Queue()
+
+        async def from_browser() -> None:
+            # Pull mic PCM (and control messages) off the browser socket and
+            # forward audio bytes straight to Deepgram.
             try:
                 while True:
                     data = await self.ws.receive()
                     if data.get("type") == "websocket.disconnect":
                         break
-                    if "bytes" in data:
-                        dg_conn.send(data["bytes"])
-                    elif "text" in data:
+                    if data.get("bytes") is not None:
+                        await dg_ws.send(data["bytes"])
+                    elif data.get("text") is not None:
                         msg = json.loads(data["text"])
                         if msg.get("type") == "end_session":
                             break
-                        elif msg.get("type") == "inject_text" and msg.get("text"):
-                            transcript_queue.put_nowait(msg["text"])
+                        if msg.get("type") == "inject_text" and msg.get("text"):
+                            await transcript_queue.put(msg["text"])
             finally:
-                await asyncio.to_thread(dg_conn.finish)
-                transcript_queue.put_nowait(None)
+                try:
+                    await dg_ws.send(json.dumps({"type": "CloseStream"}))
+                except Exception:
+                    pass
+
+        async def from_deepgram() -> None:
+            try:
+                async for raw in dg_ws:
+                    evt = json.loads(raw)
+                    if evt.get("type") != "Results":
+                        continue
+                    alt = evt.get("channel", {}).get("alternatives", [{}])[0]
+                    text = (alt.get("transcript") or "").strip()
+                    if text and evt.get("is_final"):
+                        await transcript_queue.put(text)
+            except Exception:
+                pass
+            finally:
+                await transcript_queue.put(None)
 
         async def process_transcripts() -> None:
             while True:
@@ -256,7 +274,12 @@ class VoiceSession:
                     break
                 await self._handle_interviewee_turn(text)
 
-        await asyncio.gather(forward_audio(), process_transcripts())
+        consumer = asyncio.create_task(process_transcripts())
+        try:
+            await asyncio.gather(from_browser(), from_deepgram())
+        finally:
+            await dg_ws.close()
+            await consumer
 
 
 @router.websocket("/session")

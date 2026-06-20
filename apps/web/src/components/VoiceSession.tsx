@@ -36,7 +36,18 @@ export default function VoiceSession() {
 
   const wsRef = useRef<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
+
+  const stopMic = useCallback(() => {
+    processorRef.current?.disconnect();
+    processorRef.current = null;
+    mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+    mediaStreamRef.current = null;
+    audioCtxRef.current?.close().catch(() => {});
+    audioCtxRef.current = null;
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -89,18 +100,13 @@ export default function VoiceSession() {
       setFinalTranscript(null);
       setErrorMsg("");
 
-      // Start microphone if not scripted
+      // Acquire the mic BEFORE opening the socket so we can fail cleanly.
+      let stream: MediaStream | null = null;
       if (!scripted) {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          const mr = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
-          mediaRecorderRef.current = mr;
-          mr.ondataavailable = (e) => {
-            if (e.data.size > 0 && wsRef.current?.readyState === WebSocket.OPEN) {
-              wsRef.current.send(e.data);
-            }
-          };
-          mr.start(250); // 250ms chunks
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+          });
         } catch {
           setStatus("error");
           setErrorMsg("Microphone access denied. Try scripted mode instead.");
@@ -111,20 +117,47 @@ export default function VoiceSession() {
       const ws = new WebSocket(
         `${API_WS_BASE}/voice/session?contact=maya_chen&scripted=${scripted}`,
       );
+      ws.binaryType = "arraybuffer";
       wsRef.current = ws;
 
-      ws.onopen = () => setStatus("live");
+      ws.onopen = () => {
+        setStatus("live");
+        // Capture raw 16kHz mono PCM via Web Audio and stream it to the API,
+        // which forwards it to Deepgram. (Chunked WebM from MediaRecorder is
+        // not independently decodable, so live STT needs raw linear16.)
+        if (stream) {
+          const audioCtx = new AudioContext({ sampleRate: 16000 });
+          audioCtxRef.current = audioCtx;
+          mediaStreamRef.current = stream;
+          const source = audioCtx.createMediaStreamSource(stream);
+          const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+          processorRef.current = processor;
+          processor.onaudioprocess = (e) => {
+            if (wsRef.current?.readyState !== WebSocket.OPEN) return;
+            const input = e.inputBuffer.getChannelData(0);
+            const pcm16 = new Int16Array(input.length);
+            for (let i = 0; i < input.length; i++) {
+              const s = Math.max(-1, Math.min(1, input[i]));
+              pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+            }
+            wsRef.current.send(pcm16.buffer);
+          };
+          source.connect(processor);
+          // Route through a muted gain so onaudioprocess fires without feedback.
+          const sink = audioCtx.createGain();
+          sink.gain.value = 0;
+          processor.connect(sink);
+          sink.connect(audioCtx.destination);
+        }
+      };
       ws.onmessage = (event) => handleMessage(JSON.parse(event.data) as ServerMsg);
       ws.onerror = () => {
         setStatus("error");
         setErrorMsg("WebSocket connection failed. Make sure the API is running on port 8001.");
       };
-      ws.onclose = () => {
-        mediaRecorderRef.current?.stop();
-        mediaRecorderRef.current = null;
-      };
+      ws.onclose = () => stopMic();
     },
-    [handleMessage],
+    [handleMessage, stopMic],
   );
 
   const injectScriptedResponse = useCallback(() => {
