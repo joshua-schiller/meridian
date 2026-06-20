@@ -10,11 +10,6 @@ function trimText(text: string, maxLength: number) {
   return `${text.slice(0, maxLength - 1).trimEnd()}...`;
 }
 
-function averageScore(questions: Question[]) {
-  if (questions.length === 0) return 0;
-  return questions.reduce((sum, question) => sum + question.specificity_score, 0) / questions.length;
-}
-
 function QuestionPreview({
   question,
   index,
@@ -42,14 +37,18 @@ function QuestionPreview({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs font-semibold text-[var(--accent-ink)]">
-              {scoreLabel(question.specificity_score)} specificity
-            </span>
             {question.grounding.length > 0 ? (
               <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-[var(--blue)]">
                 evidence-linked
               </span>
-            ) : null}
+            ) : (
+              <span className="rounded-md bg-[var(--panel-strong)] px-2 py-1 text-xs font-semibold text-[var(--muted)]">
+                broad baseline
+              </span>
+            )}
+            <span className="font-mono text-xs font-semibold text-[var(--muted)]">
+              {scoreLabel(question.specificity_score)} specificity
+            </span>
           </div>
           <h3 className="mt-2 text-base font-semibold leading-6">{question.primary}</h3>
           {emphasis ? (
@@ -63,7 +62,27 @@ function QuestionPreview({
   );
 }
 
-function Metric({
+function LoopStep({
+  step,
+  title,
+  body,
+}: {
+  step: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <article className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
+      <span className="grid h-8 w-8 place-items-center rounded-md bg-[var(--accent)] font-mono text-sm font-semibold text-white">
+        {step}
+      </span>
+      <h3 className="mt-4 text-lg font-semibold">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{body}</p>
+    </article>
+  );
+}
+
+function QualityCheck({
   label,
   value,
   detail,
@@ -74,9 +93,11 @@ function Metric({
 }) {
   return (
     <div className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">{label}</p>
-      <p className="mt-2 font-mono text-3xl font-semibold text-[var(--accent-ink)]">{value}</p>
-      <p className="mt-1 text-sm text-[var(--muted)]">{detail}</p>
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-sm font-semibold">{label}</p>
+        <p className="font-mono text-lg font-semibold text-[var(--accent-ink)]">{value}</p>
+      </div>
+      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{detail}</p>
     </div>
   );
 }
@@ -123,7 +144,7 @@ export default async function Home() {
 
   const liveBadge =
     source === "api"
-      ? { label: `Live loop: ${metrics.mode}`, cls: "bg-[var(--accent)] text-white" }
+      ? { label: `Live adaptive loop: ${metrics.mode}`, cls: "bg-[var(--accent)] text-white" }
       : { label: "Fixture fallback", cls: "bg-[var(--warn)] text-white" };
   const specificityDelta = Math.round(
     (metrics.specificity_after - metrics.specificity_before) * 100,
@@ -147,78 +168,89 @@ export default async function Home() {
                 {liveBadge.label}
               </span>
               <span className="rounded-md bg-[var(--panel-strong)] px-3 py-1 font-mono text-xs font-semibold text-[var(--accent-ink)]">
-                {transcript.id}
+                transcript in, next guide out
               </span>
             </div>
             <p className="mt-5 text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
               Meridian Demo Console
             </p>
             <h1 className="mt-2 max-w-4xl text-3xl font-semibold tracking-normal text-balance md:text-5xl">
-              One interview turns a broad guide into sharper follow-up questions.
+              Meridian turns every discovery call into a sharper next interview.
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-[var(--muted)]">
-              {contact.name}, {contact.role} at {contact.company}, revealed that synthesis is the
-              bottleneck. Meridian converts that signal into a focused next interview guide.
+              The product closes the gap between interviews. It reads the transcript, updates the
+              living insight document, and produces the next question guide so teams stop repeating
+              the same broad discovery script.
             </p>
           </div>
 
           <aside className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-              Research goal
+              Current research goal
             </p>
             <p className="mt-2 text-base font-semibold leading-7">{transcript.research_goal}</p>
-            <div className="mt-4 rounded-md bg-[var(--panel-strong)] p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                Question specificity score
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                Average across the generated question bank. Higher means the questions are
-                narrower, more evidence-linked follow-ups.
-              </p>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-md border border-[var(--line)] p-3">
-                <p className="text-[var(--muted)]">First guide</p>
-                <p className="mt-1 font-mono font-semibold">
-                  {scoreLabel(averageScore(questionBankBefore.questions))}
+            <div className="mt-4 space-y-3 text-sm leading-6">
+              <div className="rounded-md bg-[var(--panel-strong)] p-3">
+                <p className="font-semibold text-[var(--accent-ink)]">Input</p>
+                <p className="text-[var(--muted)]">
+                  Interview 1 transcript from {contact.name}, {contact.company}.
                 </p>
               </div>
               <div className="rounded-md bg-[var(--accent-wash)] p-3">
-                <p className="text-[var(--muted)]">Next guide</p>
-                <p className="mt-1 font-mono font-semibold text-[var(--accent-ink)]">
-                  {scoreLabel(averageScore(questionBankAfter.questions))}
+                <p className="font-semibold text-[var(--accent-ink)]">Output</p>
+                <p className="text-[var(--muted)]">
+                  Updated insights plus an Interview 2 guide grounded in what changed.
                 </p>
               </div>
             </div>
           </aside>
         </header>
 
-        <section className="grid gap-3 md:grid-cols-3">
-          <Metric
-            label="Question specificity lift"
-            value={`+${specificityDelta} pts`}
-            detail={`Average question score: ${metrics.specificity_before.toFixed(2)} to ${metrics.specificity_after.toFixed(2)}`}
-          />
-          <Metric
-            label="Grounded questions"
-            value={`${metrics.grounded_questions}/${questionBankAfter.questions.length}`}
-            detail="Every strong follow-up points back to evidence."
-          />
-          <Metric
-            label="New findings"
-            value={`+${metrics.findings_added}`}
-            detail="Themes captured for the stakeholder report."
-          />
+        <section className="rounded-lg border border-[var(--accent-soft)] bg-[var(--accent-wash)] p-4">
+          <div className="grid gap-4 lg:grid-cols-[20rem_1fr]">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
+                What the product does
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold">Runs the discovery loop between calls</h2>
+              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                Meridian is not a note viewer. It is an adaptive research operator: each transcript
+                changes the artifact the next interview starts from.
+              </p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <LoopStep
+                step="1"
+                title="Capture the transcript"
+                body="A live or fallback interview transcript becomes the shared input for the loop."
+              />
+              <LoopStep
+                step="2"
+                title="Extract what changed"
+                body="The system identifies new themes, evidence, open questions, and contradictions."
+              />
+              <LoopStep
+                step="3"
+                title="Update the insight doc"
+                body="Findings are added to a living research artifact with confidence and source context."
+              />
+              <LoopStep
+                step="4"
+                title="Generate the next guide"
+                body="The next question bank targets the gaps and evidence from the prior interview."
+              />
+            </div>
+          </div>
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-              Before Interview 1
+              Starting point
             </p>
-            <h2 className="mt-2 text-2xl font-semibold">Broad discovery guide</h2>
+            <h2 className="mt-2 text-2xl font-semibold">Interview 1 guide is broad</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-              The first guide starts wide because Meridian has not heard from a customer yet.
+              Before customer evidence, the guide asks general workflow questions.
             </p>
             <div className="mt-4 space-y-3">
               {beforeQuestions.map((question, index) => (
@@ -229,11 +261,12 @@ export default async function Home() {
 
           <div className="rounded-lg border border-[var(--accent-soft)] bg-[var(--panel)] p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
-              After Interview 1
+              Result of the loop
             </p>
-            <h2 className="mt-2 text-2xl font-semibold">Sharper next-call guide</h2>
+            <h2 className="mt-2 text-2xl font-semibold">Interview 2 guide is aimed at the gaps</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-              The next guide targets synthesis behavior, context retrieval, and trust thresholds.
+              After the transcript is synthesized, the next guide targets synthesis behavior,
+              context retrieval, and trust thresholds.
             </p>
             <div className="mt-4 space-y-3">
               {afterQuestions.map((question, index) => (
@@ -248,9 +281,9 @@ export default async function Home() {
             <div className="mb-3 flex items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                  What Meridian heard
+                  Evidence from Interview 1
                 </p>
-                <h2 className="mt-1 text-2xl font-semibold">Three signals from the transcript</h2>
+                <h2 className="mt-1 text-2xl font-semibold">The transcript shows the synthesis bottleneck</h2>
               </div>
               <span className="font-mono text-xs text-[var(--muted)]">{transcript.source}</span>
             </div>
@@ -264,7 +297,7 @@ export default async function Home() {
           <div>
             <div className="mb-3">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                What changed
+                Updated research artifact
               </p>
               <h2 className="mt-1 text-2xl font-semibold">Living insight document</h2>
             </div>
@@ -273,6 +306,26 @@ export default async function Home() {
                 <ThemeCard key={finding.id} theme={theme} finding={finding} />
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
+          <div className="grid gap-3 md:grid-cols-3">
+            <QualityCheck
+              label="Specificity check"
+              value={`+${specificityDelta} pts`}
+              detail={`The question-bank average moved from ${metrics.specificity_before.toFixed(2)} to ${metrics.specificity_after.toFixed(2)}.`}
+            />
+            <QualityCheck
+              label="Grounding check"
+              value={`${metrics.grounded_questions}/${questionBankAfter.questions.length}`}
+              detail="Generated follow-ups point back to evidence from the transcript."
+            />
+            <QualityCheck
+              label="Synthesis check"
+              value={`+${metrics.findings_added}`}
+              detail="New findings were added to the living insight document."
+            />
           </div>
         </section>
 
