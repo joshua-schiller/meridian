@@ -9,6 +9,7 @@ out/
 dist/
 coverage/
 npm-debug.log*
+*.tsbuildinfo
 
 __pycache__/
 *.py[cod]
