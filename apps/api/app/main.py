@@ -2,6 +2,9 @@ from pathlib import Path
 from typing import Any
 import json
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException
 
 from research_core import Contact, Dossier, LivingInsightDocument, LoopMode, QuestionBank, Transcript
@@ -14,11 +17,15 @@ from research_core.pipeline import run_loop
 ROOT_DIR = Path(__file__).resolve().parents[3]
 FIXTURES_DIR = ROOT_DIR / "fixtures"
 
+from .deepgram_voice import router as voice_router
+
 app = FastAPI(
     title="Meridian API",
     summary="Transcript-first discovery loop API skeleton.",
     version="0.1.0",
 )
+
+app.include_router(voice_router)
 
 
 def read_fixture(relative_path: str) -> dict[str, Any]:
