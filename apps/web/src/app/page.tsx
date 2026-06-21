@@ -295,8 +295,8 @@ export default function Home() {
 
     const cleanedQuestions = questions.map((question) => question.trim()).filter(Boolean);
 
-    // Pressing create "runs" the campaign — it now points at the real synthesized
-    // results, which did not exist before this moment.
+    // Pressing create "runs" the campaign and reveals the real synthesized
+    // results in the home list, which did not exist before this moment.
     const created: Campaign = {
       id: GENERATED_CAMPAIGN_ID,
       name: pendingCampaign.name || pulseFixture.title,
@@ -319,7 +319,7 @@ export default function Home() {
         ? currentCampaigns
         : [created, ...currentCampaigns],
     );
-    router.push(created.detailHref!);
+    goHome();
   }
 
   function handleSupportingDocsChange(e: React.ChangeEvent<HTMLInputElement>) {
