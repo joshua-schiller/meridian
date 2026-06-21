@@ -364,13 +364,16 @@ class VoiceSession:
         # Deepgram the exact encoding rather than relying on container sniffing.
         from websockets.asyncio.client import connect as ws_connect
 
-        # Note: utterance_end_ms requires interim_results=true, so we use
-        # endpointing instead to get is_final segments on speech pauses.
+        # Turn-taking: enable interim results + utterance_end_ms so Deepgram
+        # tells us when the speaker has actually FINISHED (≈1.5s of silence)
+        # rather than finalizing on every short mid-sentence pause. We buffer
+        # the is_final segments and only emit a turn on UtteranceEnd, so a
+        # natural pause mid-answer never cuts the speaker off.
         dg_url = (
             "wss://api.deepgram.com/v1/listen"
             "?encoding=linear16&sample_rate=16000&channels=1"
             "&model=nova-2&language=en-US&smart_format=true"
-            "&interim_results=false&endpointing=800"
+            "&interim_results=true&utterance_end_ms=1500"
         )
 
         try:
@@ -410,18 +413,28 @@ class VoiceSession:
                     pass
 
         async def from_deepgram() -> None:
+            # Accumulate finalized segments and only flush them as one complete
+            # turn when Deepgram signals the utterance is over (UtteranceEnd),
+            # so a natural pause mid-answer doesn't cut the speaker off.
+            buffer: list[str] = []
             try:
                 async for raw in dg_ws:
                     evt = json.loads(raw)
-                    if evt.get("type") != "Results":
-                        continue
-                    alt = evt.get("channel", {}).get("alternatives", [{}])[0]
-                    text = (alt.get("transcript") or "").strip()
-                    if text and evt.get("is_final"):
-                        await transcript_queue.put(text)
+                    etype = evt.get("type")
+                    if etype == "Results":
+                        alt = evt.get("channel", {}).get("alternatives", [{}])[0]
+                        text = (alt.get("transcript") or "").strip()
+                        if text and evt.get("is_final"):
+                            buffer.append(text)
+                    elif etype == "UtteranceEnd":
+                        if buffer:
+                            await transcript_queue.put(" ".join(buffer))
+                            buffer = []
             except Exception:
                 pass
             finally:
+                if buffer:
+                    await transcript_queue.put(" ".join(buffer))
                 await transcript_queue.put(None)
 
         async def process_transcripts() -> None:
