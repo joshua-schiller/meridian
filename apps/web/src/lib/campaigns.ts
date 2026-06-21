@@ -9,7 +9,7 @@ export type CampaignInterview = {
   participant: string;
   role: string;
   company: string;
-  status: "completed" | "scheduled";
+  status: "completed" | "scheduled" | "in progress";
   summary: string;
   highlights: string[];
   transcript?: TranscriptTurn[];
@@ -50,7 +50,7 @@ export const campaigns: Campaign[] = [
     "id": "pulse-adoption",
     "title": "Pulse adoption",
     "oneLineGoal": "Understand why internal teams aren't adopting Pulse, our internal analytics platform.",
-    "completedInterviews": 10,
+    "completedInterviews": 8,
     "totalInterviews": 10,
     "contactsFileName": "pulse-contacts.csv",
     "supportingDocumentNames": [
@@ -577,7 +577,7 @@ export const campaigns: Campaign[] = [
         "participant": "Lucia Romano",
         "role": "Operations Coordinator",
         "company": "Lumen",
-        "status": "completed",
+        "status": "in progress",
         "summary": "Lucia, a non-technical Operations Coordinator, avoids Pulse because the query builder is intimidating and she has no idea where to start, instead wanting ready-made dashboards she can glance at rather than building anything, with confusing metric jargon adding to her distrust.",
         "highlights": [
           "It was a couple weeks ago, and I closed it almost right away.",
@@ -641,7 +641,7 @@ export const campaigns: Campaign[] = [
         "participant": "Derek Olsen",
         "role": "Regional Sales Director",
         "company": "Lumen",
-        "status": "completed",
+        "status": "in progress",
         "summary": "Derek, a senior non-technical sales director, dreads Pulse because it's too complex and only opens it weekly, wanting one simple pre-built summary screen of his region rather than a report builder, and routinely falls back to asking an analyst.",
         "highlights": [
           "I only open it about once a week, and I kind of dread it.",

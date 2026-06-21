@@ -154,7 +154,7 @@ export default async function CampaignViewPage({ params }: CampaignViewPageProps
                     }
                     const confirmed =
                       finding.supportCount != null
-                        ? `${finding.supportCount}/${completedCount}`
+                        ? `${finding.supportCount}/${totalCount}`
                         : getConfirmerRatio(finding.confidence, completedCount);
 
                     return (

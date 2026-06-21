@@ -110,7 +110,9 @@ export default function InterviewsConsoleList({ interviews }: { interviews: Inte
 function InterviewCard({ interview }: { interview: Interview }) {
   const isCompleted = interview.status === "completed";
   const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
-  const hasTranscript = Boolean(interview.transcript && interview.transcript.length > 0);
+  // Only completed interviews have a finished transcript to view; the ones still
+  // in progress are mid-conversation.
+  const hasTranscript = isCompleted && Boolean(interview.transcript && interview.transcript.length > 0);
   return (
     <article className="relative overflow-hidden rounded-none border border-slate-200 bg-white p-6 md:p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-5">
       {/* Status Vertical Bar */}
