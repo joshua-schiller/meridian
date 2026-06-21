@@ -37,9 +37,16 @@ body {
   min-height: 100vh;
   background-color: var(--background);
   background-image: 
-    radial-gradient(#e2e8f0 1.5px, transparent 1.5px),
-    linear-gradient(180deg, #ffffff 0%, var(--background) 24rem);
-  background-size: 24px 24px, 100% 100%;
+    /* Sun glare filtering down from the top */
+    linear-gradient(180deg, rgba(14, 116, 144, 0.04) 0%, rgba(244, 247, 250, 0) 40rem),
+    /* Soft deep-ocean radial currents */
+    radial-gradient(at 0% 0%, rgba(10, 102, 194, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(13, 148, 136, 0.04) 0px, transparent 50%),
+    radial-gradient(at 80% 20%, rgba(2, 132, 199, 0.03) 0px, transparent 40%),
+    /* Subtly tinted micro-grid dots */
+    radial-gradient(rgba(10, 102, 194, 0.06) 1.5px, transparent 1.5px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 24px 24px;
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;

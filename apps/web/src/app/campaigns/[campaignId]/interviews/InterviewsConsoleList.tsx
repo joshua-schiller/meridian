@@ -22,44 +22,6 @@ export default function InterviewsConsoleList({ interviews }: { interviews: Inte
 
   return (
     <div className="grid gap-6">
-      {/* In Progress Section */}
-      <div>
-        <button
-          type="button"
-          onClick={() => setIsInProgressOpen(!isInProgressOpen)}
-          className="w-full flex items-center justify-between border border-slate-200 bg-white px-6 py-4 hover:bg-slate-50/80 transition-all duration-200 cursor-pointer shadow-sm select-none"
-        >
-          <div className="flex items-center gap-3">
-            <h3 className="text-base font-bold text-[var(--foreground)]">In Progress ({inProgress.length})</h3>
-            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-700 border border-amber-200/50">
-              Active
-            </span>
-          </div>
-          <svg
-            className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isInProgressOpen ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        {isInProgressOpen && (
-          <div className="mt-4 grid gap-4">
-            {inProgress.length === 0 ? (
-              <p className="text-sm text-[var(--muted)] bg-slate-50 border border-dashed border-slate-200 p-8 text-center">
-                No interviews currently in progress.
-              </p>
-            ) : (
-              inProgress.map((interview) => (
-                <InterviewCard key={interview.id} interview={interview} />
-              ))
-            )}
-          </div>
-        )}
-      </div>
-
       {/* Completed Section */}
       <div>
         <button
@@ -91,6 +53,44 @@ export default function InterviewsConsoleList({ interviews }: { interviews: Inte
               </p>
             ) : (
               completed.map((interview) => (
+                <InterviewCard key={interview.id} interview={interview} />
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* In Progress Section */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setIsInProgressOpen(!isInProgressOpen)}
+          className="w-full flex items-center justify-between border border-slate-200 bg-white px-6 py-4 hover:bg-slate-50/80 transition-all duration-200 cursor-pointer shadow-sm select-none"
+        >
+          <div className="flex items-center gap-3">
+            <h3 className="text-base font-bold text-[var(--foreground)]">In Progress ({inProgress.length})</h3>
+            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-700 border border-amber-200/50">
+              Active
+            </span>
+          </div>
+          <svg
+            className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isInProgressOpen ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {isInProgressOpen && (
+          <div className="mt-4 grid gap-4">
+            {inProgress.length === 0 ? (
+              <p className="text-sm text-[var(--muted)] bg-slate-50 border border-dashed border-slate-200 p-8 text-center">
+                No interviews currently in progress.
+              </p>
+            ) : (
+              inProgress.map((interview) => (
                 <InterviewCard key={interview.id} interview={interview} />
               ))
             )}
