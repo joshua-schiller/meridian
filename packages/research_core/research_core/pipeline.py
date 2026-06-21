@@ -17,6 +17,8 @@ def run_loop(
     prior_insight_doc: LivingInsightDocument,
     contact: Contact | None = None,
     dossier: Dossier | None = None,
+    next_contact: Contact | None = None,
+    next_dossier: Dossier | None = None,
     next_interviewee_id: str = "pm_002_pending",
     mode: LoopMode = "deterministic",
     claude_client: ClaudeMessageClient | None = None,
@@ -29,6 +31,8 @@ def run_loop(
             prior_insight_doc=prior_insight_doc,
             contact=contact,
             dossier=dossier,
+            next_contact=next_contact,
+            next_dossier=next_dossier,
             next_interviewee_id=next_interviewee_id,
             client=claude_client,
             config=claude_config,
@@ -39,6 +43,8 @@ def run_loop(
         prior_insight_doc=prior_insight_doc,
         contact=contact,
         dossier=dossier,
+        next_contact=next_contact,
+        next_dossier=next_dossier,
         next_interviewee_id=next_interviewee_id,
     )
 

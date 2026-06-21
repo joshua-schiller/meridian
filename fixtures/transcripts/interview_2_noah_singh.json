@@ -1,0 +1,58 @@
+{
+  "id": "transcript_interview_002",
+  "research_goal": "Understand why PMs at early-stage startups struggle with discovery research.",
+  "interview_number": 2,
+  "interviewee_id": "pm_002",
+  "source": "fixture",
+  "turns": [
+    {
+      "id": "turn_001",
+      "speaker": "agent",
+      "timestamp_seconds": 0,
+      "text": "Noah, after hearing that the first interview pointed to synthesis rather than scheduling, I want to compare it with your team. In your last discovery sprint, what specifically changed in the interview guide after the first call?"
+    },
+    {
+      "id": "turn_002",
+      "speaker": "interviewee",
+      "timestamp_seconds": 22,
+      "text": "The hard part is not getting calls for us either. We can get customers on the phone. The problem is that we keep asking broad questions after the first call because nobody owns the synthesis step before the next interview."
+    },
+    {
+      "id": "turn_003",
+      "speaker": "agent",
+      "timestamp_seconds": 50,
+      "text": "When customer context is split across systems, which source actually shapes the next interview?"
+    },
+    {
+      "id": "turn_004",
+      "speaker": "interviewee",
+      "timestamp_seconds": 72,
+      "text": "Context is scattered. Sales notes are in HubSpot, support has Slack threads and tickets, and product keeps interview notes in docs. The next guide usually reflects whichever source the PM happened to open last."
+    },
+    {
+      "id": "turn_005",
+      "speaker": "agent",
+      "timestamp_seconds": 101,
+      "text": "If Meridian proposed the next question bank, what would it need to show before you trusted it?"
+    },
+    {
+      "id": "turn_006",
+      "speaker": "interviewee",
+      "timestamp_seconds": 123,
+      "text": "Show me what changed, why it changed, and what evidence it came from. I do not want a magic list of questions; I want to see the quote or pattern that made the agent ask something sharper."
+    },
+    {
+      "id": "turn_007",
+      "speaker": "agent",
+      "timestamp_seconds": 150,
+      "text": "What would make the final discovery report useful for your leadership team?"
+    },
+    {
+      "id": "turn_008",
+      "speaker": "interviewee",
+      "timestamp_seconds": 170,
+      "text": "Executives need the pattern, the confidence level, and a few quotes. They also need to know whether the second interview confirmed the first one or changed the direction."
+    }
+  ],
+  "summary": "Noah confirms that calls are available but teams fail to synthesize quickly enough to sharpen the next interview. He adds that scattered sources cause whichever customer context is easiest to find to dominate, and that AI-generated interview plans need visible evidence and cross-interview confidence."
+}

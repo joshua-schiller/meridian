@@ -34,6 +34,8 @@ def run_adaptive_loop(
     prior_insight_doc: LivingInsightDocument,
     contact: Contact | None = None,
     dossier: Dossier | None = None,
+    next_contact: Contact | None = None,
+    next_dossier: Dossier | None = None,
     next_interviewee_id: str = "pm_002_pending",
 ) -> LoopResult:
     findings = extract_findings(transcript)
@@ -44,6 +46,8 @@ def run_adaptive_loop(
         findings=findings,
         contact=contact,
         dossier=dossier,
+        next_contact=next_contact,
+        next_dossier=next_dossier,
         next_interviewee_id=next_interviewee_id,
     )
     evidence = link_evidence_to_questions(findings, transcript.interviewee_id)
@@ -154,7 +158,11 @@ def update_living_insight_doc(
             theme = InsightTheme(id=extracted.theme_id, label=extracted.theme_label, findings=[])
             themes_by_id[extracted.theme_id] = theme
 
-        if not any(finding.id == extracted.id for finding in theme.findings):
+        existing_finding = next(
+            (finding for finding in theme.findings if finding.id == extracted.id),
+            None,
+        )
+        if existing_finding is None:
             theme.findings.append(
                 Finding(
                     id=extracted.id,
@@ -166,6 +174,22 @@ def update_living_insight_doc(
                     ],
                 )
             )
+        else:
+            existing_quotes = {
+                (quote.interviewee, quote.quote)
+                for quote in existing_finding.supporting_quotes
+            }
+            quote_key = (transcript.interviewee_id, extracted.quote)
+            if quote_key not in existing_quotes:
+                existing_finding.supporting_quotes.append(
+                    SupportingQuote(
+                        interviewee=transcript.interviewee_id,
+                        quote=extracted.quote,
+                    )
+                )
+            if len({quote.interviewee for quote in existing_finding.supporting_quotes}) >= 2:
+                existing_finding.status = "confirmed"
+                existing_finding.confidence = "high"
 
     open_questions = [
         "Do other PMs also see synthesis as a bigger blocker than recruiting?",
@@ -191,18 +215,28 @@ def generate_next_question_bank(
     findings: list[ExtractedFinding],
     contact: Contact | None,
     dossier: Dossier | None,
+    next_contact: Contact | None,
+    next_dossier: Dossier | None,
     next_interviewee_id: str,
 ) -> QuestionBank:
     interview_number = transcript.interview_number + 1
-    hook = first_personalization_hook(dossier)
+    next_interviewee_name = next_contact.name.split()[0] if next_contact else None
+    completed_interviewee_name = contact.name.split()[0] if contact else None
+    hook = first_personalization_hook(next_dossier)
     opening = (
         "I am especially interested in how your team turns one customer conversation "
         "into a sharper next one."
     )
-    if contact is not None and hook:
+    if next_interviewee_name and completed_interviewee_name and hook:
         opening = (
-            f"After hearing {contact.name.split()[0]}'s point about discovery follow-up, "
-            f"I want to compare it with your team. {hook}"
+            f"{next_interviewee_name}, after Interview {transcript.interview_number} "
+            f"with {completed_interviewee_name} surfaced synthesis as the blocker, "
+            f"I want to compare that with your team. {hook}"
+        )
+    elif next_interviewee_name and hook:
+        opening = (
+            f"{next_interviewee_name}, I want to understand how your team turns one "
+            f"customer conversation into a sharper next one. {hook}"
         )
 
     finding_by_id = {finding.id: finding for finding in findings}

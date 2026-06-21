@@ -10,7 +10,7 @@ from research_core.claude_loop import (
     build_claude_loop_prompt,
     run_claude_adaptive_loop,
 )
-from research_core.fixture_io import load_demo_inputs
+from research_core.fixture_io import load_demo_inputs, load_demo_sequence_inputs
 from research_core.loop import run_adaptive_loop
 from research_core.pipeline import run_loop
 
@@ -151,19 +151,24 @@ class ClaudeLoopTests(unittest.TestCase):
         self.assertEqual(result.id, "loop_after_interview_001")
 
     def test_prompt_contains_transcript_and_prior_doc(self) -> None:
-        contact, dossier, transcript, prior_doc, _ = load_demo_inputs(FIXTURES_DIR)
+        contacts, dossiers, transcripts, prior_doc, _ = load_demo_sequence_inputs(FIXTURES_DIR)
 
         prompt = build_claude_loop_prompt(
-            transcript=transcript,
+            transcript=transcripts[0],
             prior_insight_doc=prior_doc,
-            contact=contact,
-            dossier=dossier,
-            next_interviewee_id="pm_002_pending",
+            contact=contacts[0],
+            dossier=dossiers[0],
+            next_contact=contacts[1],
+            next_dossier=dossiers[1],
+            next_interviewee_id=contacts[1].id,
         )
 
-        self.assertIn(transcript.id, prompt)
+        self.assertIn(transcripts[0].id, prompt)
         self.assertIn(prior_doc.id, prompt)
         self.assertIn("next_question_bank", prompt)
+        self.assertIn("completed_interview_contact", prompt)
+        self.assertIn("next_interview_contact", prompt)
+        self.assertIn("Noah Singh", prompt)
 
 
 if __name__ == "__main__":

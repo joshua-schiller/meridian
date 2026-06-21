@@ -16,6 +16,8 @@ Current endpoints:
 - `GET /demo/question-banks`
 - `GET /demo/insight-docs`
 - `GET /demo/adaptive-loop`
+- `POST /demo/run-sequence`
+- `POST /demo/run-sequence/report.pdf`
 - `GET /demo/report/markdown`
 - `GET /demo/report.pdf`
 - `POST /research/run-fixture`
@@ -32,6 +34,8 @@ The API reads the same fixture files used by the web app and validates them thro
 
 `/research/run-fixture` returns the full P0 loop payload: transcript, before/after insight docs, before/after question banks, loop evidence, and specificity metrics.
 
+`/demo/run-sequence` is Joshua's accumulated demo path. It runs the Maya fixture transcript, persists the updated living insight document, retrieves that memory before Noah's Interview 2 transcript, updates repeated findings to confirmed/high confidence when both interviewees support them, produces the Interview 3 AI plan, and returns a stakeholder report Markdown string from the accumulated insights. `/demo/run-sequence/report.pdf` renders the same two-interview story as a PDF.
+
 `/demo/report/markdown` and `/demo/report.pdf` generate the stakeholder-ready report from the same loop payload. The report frames the question bank as Meridian's next AI interview plan, not as a human-led guide.
 
 `/research/run-transcript` accepts `{ "transcript": <canonical Transcript> }` from the voice session and returns the same adaptive-loop payload. `/report/from-transcript/markdown` and `/report/from-transcript.pdf` accept the same body and generate the report directly from that transcript. `/report/from-loop-result/markdown` and `/report/from-loop-result.pdf` accept `{ "loop_result": <LoopResult> }` so the web demo can render the PDF from the exact synthesis result it already showed instead of calling Claude twice. If prior insight docs, contact, dossier, or baseline question bank are omitted, the API uses the demo defaults.
@@ -47,4 +51,12 @@ Useful Redis checks:
 ```bash
 curl "http://localhost:8001/demo/state"
 curl "http://localhost:8001/research/sessions/understand-why-pms-at-early-stage-startups-struggle-with-discovery-research"
+```
+
+Useful sequence checks:
+
+```bash
+curl -X POST "http://localhost:8001/demo/run-sequence?mode=deterministic&session_id=rehearsal-sequence"
+curl -X POST -o artifacts/sequence_report.pdf \
+  "http://localhost:8001/demo/run-sequence/report.pdf?mode=deterministic&session_id=rehearsal-sequence-pdf"
 ```

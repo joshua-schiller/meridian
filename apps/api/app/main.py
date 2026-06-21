@@ -17,11 +17,12 @@ from research_core import (
     Transcript,
 )
 from research_core.claude_loop import ClaudeLoopError
-from research_core.fixture_io import load_demo_inputs
+from research_core.fixture_io import load_demo_inputs, load_demo_sequence_inputs
 from research_core.loop import average_specificity
 from research_core.pipeline import resolve_mode, run_loop
 from research_core.report import (
     StakeholderReport,
+    build_sequence_report,
     build_stakeholder_report,
     render_report_pdf,
     report_to_markdown,
@@ -66,6 +67,9 @@ app.include_router(voice_router)
 class TranscriptLoopRequest(BaseModel):
     transcript: Transcript
     session_id: str | None = None
+    next_interviewee_id: str | None = None
+    next_contact: Contact | None = None
+    next_dossier: Dossier | None = None
     prior_insight_doc: LivingInsightDocument | None = None
     baseline_question_bank: QuestionBank | None = None
     contact: Contact | None = None
@@ -103,6 +107,9 @@ def loop_payload(
     memory_read: MemoryRead,
     memory_store: ResearchMemory,
     persist_memory: bool,
+    next_interviewee_id: str = "pm_002_pending",
+    next_contact: Contact | None = None,
+    next_dossier: Dossier | None = None,
 ) -> dict[str, Any]:
     requested_mode = mode
     resolved_mode = resolve_mode(mode)
@@ -114,7 +121,10 @@ def loop_payload(
             prior_insight_doc=prior_insight_doc,
             contact=contact,
             dossier=dossier,
+            next_contact=next_contact,
+            next_dossier=next_dossier,
             mode=mode,
+            next_interviewee_id=next_interviewee_id,
         )
     except ClaudeLoopError as exc:
         if mode != "auto":
@@ -125,7 +135,10 @@ def loop_payload(
             prior_insight_doc=prior_insight_doc,
             contact=contact,
             dossier=dossier,
+            next_contact=next_contact,
+            next_dossier=next_dossier,
             mode="deterministic",
+            next_interviewee_id=next_interviewee_id,
         )
         resolved_mode = "deterministic"
         fallback_reason = f"Claude loop failed; auto mode used deterministic fallback: {exc}"
@@ -215,6 +228,11 @@ def run_transcript_request(
         request,
         store,
     )
+    next_interviewee_id = (
+        request.next_interviewee_id
+        or (request.next_contact.id if request.next_contact else None)
+        or "pm_002_pending"
+    )
     return loop_payload(
         transcript=request.transcript,
         prior_insight_doc=prior_insight_doc,
@@ -226,6 +244,9 @@ def run_transcript_request(
         memory_read=memory_read,
         memory_store=store,
         persist_memory=persist_memory,
+        next_interviewee_id=next_interviewee_id,
+        next_contact=request.next_contact,
+        next_dossier=request.next_dossier,
     )
 
 
@@ -389,6 +410,129 @@ def demo_state() -> dict[str, Any]:
 @app.get("/research/sessions/{session_id}")
 def research_session_state(session_id: str) -> dict[str, Any]:
     return get_memory_store().snapshot(session_id=session_id)
+
+
+def build_demo_sequence_payload(
+    *,
+    mode: LoopMode,
+    session_id: str | None = None,
+    persist_memory: bool = True,
+) -> dict[str, Any]:
+    contacts, dossiers, transcripts, initial_doc, baseline_bank = load_demo_sequence_inputs(
+        FIXTURES_DIR
+    )
+    store = get_memory_store()
+    sequence_session_id = session_id or f"{session_id_for_goal(transcripts[0].research_goal)}-sequence"
+
+    first_read = store.retrieve(
+        session_id=sequence_session_id,
+        research_goal=transcripts[0].research_goal,
+    )
+    first_payload = loop_payload(
+        transcript=transcripts[0],
+        prior_insight_doc=first_read.insight_doc or initial_doc,
+        baseline_question_bank=baseline_bank,
+        contact=contacts[0],
+        dossier=dossiers[0],
+        mode=mode,
+        session_id=sequence_session_id,
+        memory_read=first_read,
+        memory_store=store,
+        persist_memory=persist_memory,
+        next_interviewee_id=contacts[1].id,
+        next_contact=contacts[1],
+        next_dossier=dossiers[1],
+    )
+    first_result = LoopResult.model_validate(first_payload["loop_result"])
+    first_next_bank = QuestionBank.model_validate(first_payload["question_bank_after"])
+
+    second_read = store.retrieve(
+        session_id=sequence_session_id,
+        research_goal=transcripts[1].research_goal,
+    )
+    second_payload = loop_payload(
+        transcript=transcripts[1],
+        prior_insight_doc=second_read.insight_doc or first_result.updated_insight_doc,
+        baseline_question_bank=first_next_bank,
+        contact=contacts[1],
+        dossier=dossiers[1],
+        mode=mode,
+        session_id=sequence_session_id,
+        memory_read=second_read,
+        memory_store=store,
+        persist_memory=persist_memory,
+        next_interviewee_id="pm_003_pending",
+    )
+    second_result = LoopResult.model_validate(second_payload["loop_result"])
+    report = build_sequence_report(
+        loop_results=[first_result, second_result],
+        contacts=contacts,
+        baseline_question_bank=baseline_bank,
+    )
+
+    return {
+        "session_id": sequence_session_id,
+        "contacts": [contact.model_dump(mode="json") for contact in contacts],
+        "loops": [first_payload, second_payload],
+        "report_markdown": report_to_markdown(report),
+        "memory_state": store.snapshot(session_id=sequence_session_id),
+        "metrics": {
+            "interviews_run": 2,
+            "final_findings": sum(
+                len(theme.findings) for theme in second_result.updated_insight_doc.themes
+            ),
+            "confirmed_findings": sum(
+                1
+                for theme in second_result.updated_insight_doc.themes
+                for finding in theme.findings
+                if finding.status == "confirmed"
+            ),
+            "memory_read_statuses": [
+                first_payload["memory"]["read"]["status"],
+                second_payload["memory"]["read"]["status"],
+            ],
+            "memory_write_statuses": [
+                first_payload["memory"]["write"]["status"],
+                second_payload["memory"]["write"]["status"],
+            ],
+            "retrieved_context_items": [
+                first_payload["metrics"]["retrieved_context_items"],
+                second_payload["metrics"]["retrieved_context_items"],
+            ],
+        },
+    }
+
+
+@app.post("/demo/run-sequence")
+def demo_run_sequence(
+    mode: LoopMode = "deterministic",
+    session_id: str | None = None,
+) -> dict[str, Any]:
+    return build_demo_sequence_payload(mode=mode, session_id=session_id)
+
+
+@app.post("/demo/run-sequence/report.pdf")
+def demo_run_sequence_report_pdf(
+    mode: LoopMode = "deterministic",
+    session_id: str | None = None,
+) -> Response:
+    payload = build_demo_sequence_payload(mode=mode, session_id=session_id)
+    loop_results = [
+        LoopResult.model_validate(loop_payload_item["loop_result"])
+        for loop_payload_item in payload["loops"]
+    ]
+    contacts = [Contact.model_validate(contact) for contact in payload["contacts"]]
+    _, _, _, _, baseline_bank = load_demo_sequence_inputs(FIXTURES_DIR)
+    report = build_sequence_report(
+        loop_results=loop_results,
+        contacts=contacts,
+        baseline_question_bank=baseline_bank,
+    )
+    return Response(
+        content=render_report_pdf(report),
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'inline; filename="meridian-sequence-report.pdf"'},
+    )
 
 
 @app.get("/demo/report/markdown")

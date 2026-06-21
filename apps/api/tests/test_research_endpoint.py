@@ -247,6 +247,64 @@ class ResearchEndpointTests(unittest.TestCase):
         self.assertEqual(pdf.headers["content-type"], "application/pdf")
         self.assertTrue(pdf.content.startswith(b"%PDF"))
 
+    def test_demo_sequence_runs_two_interviews_and_uses_memory_between_them(self) -> None:
+        memory = InMemoryResearchMemory()
+        session_id = "sequence-test"
+        with (
+            warnings.catch_warnings(),
+            patch("apps.api.app.main.get_memory_store", return_value=memory),
+        ):
+            warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
+            client = TestClient(app)
+
+            response = client.post(
+                f"/demo/run-sequence?mode=deterministic&session_id={session_id}"
+            )
+
+        response.raise_for_status()
+        payload = response.json()
+
+        self.assertEqual(payload["session_id"], session_id)
+        self.assertEqual(payload["metrics"]["interviews_run"], 2)
+        self.assertEqual(len(payload["loops"]), 2)
+        self.assertEqual(payload["loops"][0]["question_bank_after"]["interview_number"], 2)
+        self.assertEqual(payload["loops"][0]["question_bank_after"]["for_interviewee"], "pm_002")
+        self.assertEqual(payload["loops"][1]["question_bank_after"]["interview_number"], 3)
+        self.assertEqual(payload["metrics"]["memory_read_statuses"], ["miss", "hit"])
+        self.assertEqual(payload["metrics"]["memory_write_statuses"], ["persisted", "persisted"])
+        self.assertGreaterEqual(payload["metrics"]["confirmed_findings"], 1)
+        self.assertGreater(payload["metrics"]["retrieved_context_items"][1], 0)
+        self.assertIn("Noah", payload["loops"][0]["question_bank_after"]["personalized_opening"])
+        self.assertIn(
+            "Generated after 2 Meridian-conducted interviews",
+            payload["report_markdown"],
+        )
+        self.assertEqual(payload["memory_state"]["event_ids"], [
+            "loop_after_interview_001",
+            "loop_after_interview_002",
+        ])
+
+    def test_demo_sequence_report_pdf_returns_accumulated_pdf(self) -> None:
+        memory = InMemoryResearchMemory()
+        with (
+            warnings.catch_warnings(),
+            patch("apps.api.app.main.get_memory_store", return_value=memory),
+        ):
+            warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
+            client = TestClient(app)
+
+            response = client.post(
+                "/demo/run-sequence/report.pdf?mode=deterministic&session_id=sequence-pdf-test"
+            )
+
+        response.raise_for_status()
+        self.assertEqual(response.headers["content-type"], "application/pdf")
+        self.assertTrue(response.content.startswith(b"%PDF"))
+        self.assertIn(
+            "meridian-sequence-report.pdf",
+            response.headers["content-disposition"],
+        )
+
     def test_scripted_voice_session_emits_canonical_transcript_without_keys(self) -> None:
         with warnings.catch_warnings(), patch.dict("os.environ", {}, clear=True):
             warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
