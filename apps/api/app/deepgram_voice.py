@@ -51,44 +51,100 @@ async def generate_interviewer_response(
     question_idx: int,
 ) -> str:
     client = AsyncAnthropic(api_key=_ant_key())
+    first_name = contact.name.split()[0]
     questions_remaining = question_bank.questions[question_idx:]
+    recent = turns[-8:]
     transcript_text = "\n".join(
-        f"{t.speaker.upper()}: {t.text}" for t in turns[-6:]
+        f"{'YOU' if t.speaker == 'agent' else first_name.upper()}: {t.text}" for t in recent
     )
 
-    if not questions_remaining:
-        next_q = "Wrap up the interview gracefully — thank them and close."
+    hooks = "\n".join(f"- {h}" for h in dossier.personalization_hooks) or "- (nothing on file)"
+    pains = ", ".join(dossier.likely_pain_points) if dossier.likely_pain_points else "(unknown)"
+
+    if questions_remaining:
+        q = questions_remaining[0]
+        probes = ", ".join(q.probes) if q.probes else ""
+        directive = f'''Your goal for THIS turn is to get to this topic — but reach it like a real person would, never by reading it aloud:
+"{q.primary}"
+{f"(Why it matters to you: {q.rationale_gap})" if q.rationale_gap else ""}
+{f"(Angles you might probe: {probes})" if probes else ""}
+
+If {first_name}'s last answer was vague or hinted at something deeper, it's completely fine to ask a quick follow-up on THAT instead of jumping ahead — follow the conversation, don't march through a list.'''
     else:
-        next_q = questions_remaining[0].primary
+        directive = (
+            f"You've covered everything you came to learn. Warmly wrap up: thank {first_name} by name, "
+            "reflect back one genuinely interesting thing they shared, and let them know how helpful this was. "
+            "Do not ask another question."
+        )
 
-    system = f"""You are Meridian, an AI discovery call interviewer.
+    system = f"""You are a senior product researcher running a live discovery call. You're warm, sharp, and genuinely curious — the kind of interviewer who makes people comfortable enough to tell real stories. You are NOT a survey bot, and you never read from a script.
 
-Interviewee: {contact.name}, {contact.role} at {contact.company}
-Research goal: {question_bank.research_goal}
+WHO YOU'RE TALKING TO
+{contact.name} — {contact.role} at {contact.company}.
+{contact.background}
 
-Personalization hooks:
-{chr(10).join(f"- {h}" for h in dossier.personalization_hooks)}
+WHAT YOU ALREADY KNOW (weave in naturally, never recite):
+{hooks}
+Pain points to listen for: {pains}
 
-Your next question to ask: {next_q}
+WHAT YOU'RE TRYING TO UNDERSTAND
+{question_bank.research_goal}
 
-Rules:
-- Keep your response to 2-3 sentences max
-- Briefly acknowledge what they just said, then ask the next question
-- Sound natural, not robotic
-- Ask exactly ONE question"""
+{directive}
+
+HOW YOU TALK (this is spoken out loud on a call):
+- Sound human: contractions, warmth, brevity. 1-3 sentences, ~40 words max. No lists, no markdown, no emoji.
+- React first. Reflect back something specific in {first_name}'s OWN words so they feel heard ("Oh interesting — so it's the synthesis that falls apart, not the interviews themselves.").
+- Ask exactly ONE question. Never stack two.
+- Go for stories and specifics: "Walk me through the last time that happened" beats "Does that happen a lot?"
+- Use {first_name}'s name occasionally, not every line.
+- Never mention question banks, research goals, scores, or that you're an AI. You're just a person having a real conversation."""
 
     response = await client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=150,
+        max_tokens=160,
+        temperature=0.8,
         system=system,
         messages=[
             {
                 "role": "user",
-                "content": f"Transcript so far:\n{transcript_text}\n\nRespond and ask your next question.",
+                "content": f"Here's the conversation so far:\n\n{transcript_text}\n\nGive your next spoken response.",
             }
         ],
     )
     return response.content[0].text.strip()
+
+
+async def generate_opening(
+    contact: Contact, dossier: Dossier, question_bank: QuestionBank
+) -> str:
+    """A warm, personal call opening. Falls back to the fixture opening if the
+    model is unreachable, so the call always starts cleanly."""
+    first_name = contact.name.split()[0]
+    hooks = "\n".join(f"- {h}" for h in dossier.personalization_hooks)
+    try:
+        client = AsyncAnthropic(api_key=_ant_key())
+        system = f"""You are a senior product researcher opening a live discovery call. Greet {first_name} warmly by first name, take a sentence to say what you're hoping to learn together, and reference something specific you know about them so it feels personal — then hand it to them with one easy, open question.
+
+WHO THEY ARE: {contact.name}, {contact.role} at {contact.company}. {contact.background}
+WHAT YOU KNOW ABOUT THEM:
+{hooks}
+WHAT YOU WANT TO UNDERSTAND: {question_bank.research_goal}
+
+This is spoken out loud. Warm and natural, 2-3 sentences, ending in one easy open question. No lists, no markdown. Never say you're an AI or mention a 'research goal'."""
+        resp = await client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=160,
+            temperature=0.7,
+            system=system,
+            messages=[{"role": "user", "content": "Give your spoken opening."}],
+        )
+        text = resp.content[0].text.strip()
+        if text:
+            return text
+    except Exception:
+        pass
+    return question_bank.personalized_opening
 
 
 class VoiceSession:
@@ -175,7 +231,7 @@ class VoiceSession:
         )
 
     async def run(self) -> None:
-        opening = self.question_bank.personalized_opening
+        opening = await generate_opening(self.contact, self.dossier, self.question_bank)
         await self._send({"type": "ready", "opening": opening})
         await self._agent_speak(opening)
 

@@ -39,6 +39,10 @@ export default function VoiceSession() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
+  // Half-duplex gate: while the agent is speaking (or thinking), we stop
+  // sending mic audio so its own voice isn't transcribed back into the loop.
+  const agentBusyRef = useRef<boolean>(false);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const stopMic = useCallback(() => {
     processorRef.current?.disconnect();
@@ -54,12 +58,29 @@ export default function VoiceSession() {
   }, [turns]);
 
   const playAudio = useCallback((base64Data: string) => {
+    // Serialize playback: stop anything currently playing so two responses
+    // can never overlap.
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
     const bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
     const blob = new Blob([bytes], { type: "audio/mpeg" });
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
-    audio.play().catch(console.error);
-    audio.onended = () => URL.revokeObjectURL(url);
+    currentAudioRef.current = audio;
+    agentBusyRef.current = true; // mute mic while the agent speaks
+    const release = () => {
+      URL.revokeObjectURL(url);
+      if (currentAudioRef.current === audio) currentAudioRef.current = null;
+      agentBusyRef.current = false; // reopen mic once the agent finishes
+    };
+    audio.onended = release;
+    audio.onerror = release;
+    audio.play().catch((err) => {
+      console.error(err);
+      release();
+    });
   }, []);
 
   const handleMessage = useCallback(
@@ -74,6 +95,9 @@ export default function VoiceSession() {
           playAudio(msg.data);
           break;
         case "transcript_final":
+          // User finished a turn — mute the mic until the agent has replied,
+          // so the gap while Claude is thinking doesn't capture stray audio.
+          agentBusyRef.current = true;
           setTurns((t) => [
             ...t,
             { id: msg.turn_id, speaker: "interviewee", text: msg.text },
@@ -85,6 +109,8 @@ export default function VoiceSession() {
           break;
         case "error":
         case "tts_error":
+          // If TTS failed there's no audio to end, so reopen the mic here.
+          agentBusyRef.current = false;
           setErrorMsg(msg.message);
           break;
       }
@@ -99,6 +125,8 @@ export default function VoiceSession() {
       setScriptedIdx(0);
       setFinalTranscript(null);
       setErrorMsg("");
+      // Agent speaks the opening first, so start muted until it finishes.
+      agentBusyRef.current = true;
 
       // Acquire the mic BEFORE opening the socket so we can fail cleanly.
       let stream: MediaStream | null = null;
@@ -134,6 +162,7 @@ export default function VoiceSession() {
           processorRef.current = processor;
           processor.onaudioprocess = (e) => {
             if (wsRef.current?.readyState !== WebSocket.OPEN) return;
+            if (agentBusyRef.current) return; // half-duplex: don't talk over the agent
             const input = e.inputBuffer.getChannelData(0);
             const pcm16 = new Int16Array(input.length);
             for (let i = 0; i < input.length; i++) {
