@@ -4,19 +4,19 @@ import { Campaign } from "@/lib/campaigns";
 
 const pulseQuestionProgression = [
   {
-    before: "What makes you reach for another tool instead of Pulse?",
-    evidence: "Dana's team treats a shared spreadsheet as the real source of truth.",
-    after: "Outside of Pulse, where does your team actually go to get the numbers it relies on day-to-day?",
+    before: "Where do Pulse's permissions block cross-team analysis?",
+    evidence: "Raj hit weekly permission walls when he tried to compare funnel data across teams.",
+    after: "When you open Pulse, what is the first thing that makes you feel unsure where to start?",
   },
   {
-    before: "Walk me through the last time you tried to get an answer from Pulse.",
-    evidence: "The blocker was not awareness; it was the query builder, joins, filters, and slow full-quarter loads.",
-    after: "Have you ever tried to build a custom query or filter in Pulse, and what was that experience like?",
+    before: "Would raw SQL, API access, or higher limits pull your workflow back into Pulse?",
+    evidence: "Raj needed more power, but the next gap was whether non-technical teams need the opposite: less building.",
+    after: "Which operational metrics would you expect to be ready-made, without building a query?",
   },
   {
-    before: "What would make Pulse part of your daily workflow?",
-    evidence: "Dana's unlock was a simple, fast path to the few numbers she needs in meetings.",
-    after: "If Pulse showed the three or four numbers most relevant to your work, no query building required, would that change how often you opened it?",
+    before: "What makes Pulse too slow for complex analysis?",
+    evidence: "Raj's timeout story reinforced performance, while Lucia's plan needed to probe freshness and metric clarity.",
+    after: "How do confusing metric names or missing freshness cues change whether you trust the number?",
   },
 ];
 
@@ -186,39 +186,39 @@ function PulseCalibrationTimeline() {
             </span>
           </div>
           <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[var(--muted)]">
-            Pulse adoption: Meridian used Dana's Interview 1 transcript to rewrite the Interview 2 plan for Marcus.
+            Pulse adoption: Meridian used Raj's Interview 8 transcript to rewrite the Interview 9 plan for Lucia.
           </p>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)_minmax(0,1fr)]">
         <PlanColumn
-          eyebrow="Interview 1 plan"
-          title="Broad starting questions"
-          detail="Dana Whitfield, Sales Operations Lead"
+          eyebrow="Interview 8 plan"
+          title="Power-user validation questions"
+          detail="Raj Patel, Product Analyst"
           questions={[
-            "What makes you reach for another tool instead of Pulse?",
-            "Walk me through the last time you tried to get an answer from Pulse.",
-            "What would make Pulse part of your daily workflow?",
+            "Where do Pulse's permissions block cross-team analysis?",
+            "What happens when complex queries time out or hit limits?",
+            "Would raw SQL, API access, or higher limits pull your workflow back into Pulse?",
           ]}
         />
 
         <div className="border border-blue-100 bg-blue-50/30 p-4">
           <div className="flex items-center justify-between gap-3">
             <span className="text-[9px] font-extrabold uppercase tracking-widest text-[var(--accent)]">
-              Interview 1 transcript
+              Interview 8 transcript
             </span>
           </div>
-          <h4 className="mt-2 text-sm font-bold text-[var(--foreground)]">What changed after Dana</h4>
+          <h4 className="mt-2 text-sm font-bold text-[var(--foreground)]">What changed after Raj</h4>
           <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">
-            Meridian stopped asking generic adoption questions and targeted the exact failure modes Dana revealed.
+            Meridian split the next plan by persona: technical users need more power, while non-technical users may need less building.
           </p>
 
           <ul className="mt-4 grid gap-3">
             {[
-              "The spreadsheet is not a side workflow; it has replaced Pulse as the team's source of truth.",
-              "The query builder is too heavy for simple pipeline questions.",
-              "Slow real-data queries make Pulse unusable during back-to-back deal reviews.",
+              "Power users leave when cross-team permissions block weekly analysis.",
+              "Complex queries time out, pushing real work into notebooks and custom dashboards.",
+              "The next gap is whether Operations needs a ready-made dashboard instead of more query power.",
             ].map((learning) => (
               <li key={learning} className="flex gap-2 text-xs leading-relaxed text-slate-700">
                 <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
@@ -228,18 +228,18 @@ function PulseCalibrationTimeline() {
           </ul>
 
           <blockquote className="mt-4 border-l-2 border-[var(--accent)] pl-3 text-xs leading-relaxed text-slate-700">
-            "My whole team basically lives in that shared sheet now, it's our real source of truth, not Pulse."
+            "Almost every interesting question I have is cross-team, and that's exactly the data I'm walled off from."
           </blockquote>
         </div>
 
         <PlanColumn
-          eyebrow="Interview 2 plan"
-          title="Sharper validation questions"
-          detail="Marcus Lee, Customer Support Lead"
+          eyebrow="Interview 9 plan"
+          title="Operations workflow questions"
+          detail="Lucia Romano, Operations Coordinator"
           questions={[
-            "Outside of Pulse, where does your team actually go to get the numbers it relies on day-to-day?",
-            "Have you ever tried to build a custom query or filter in Pulse, and what was that experience like?",
-            "If Pulse showed the three or four numbers most relevant to your work, no query building required, would that change how often you opened it?",
+            "When you open Pulse, what is the first thing that makes you feel unsure where to start?",
+            "Which operational metrics would you expect to be ready-made, without building a query?",
+            "How do confusing metric names or missing freshness cues change whether you trust the number?",
           ]}
         />
       </div>
@@ -255,7 +255,7 @@ function PulseCalibrationTimeline() {
 
               <div className="my-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
                 <span className="h-px flex-1 bg-blue-100" />
-                Dana taught Meridian
+                Raj taught Meridian
                 <span className="h-px flex-1 bg-blue-100" />
               </div>
 
@@ -263,7 +263,7 @@ function PulseCalibrationTimeline() {
 
               <div className="mt-3 border-t border-slate-200 pt-3">
                 <span className="text-[9px] font-extrabold uppercase tracking-widest text-[var(--accent)]">
-                  Interview 2
+                  Interview 9
                 </span>
                 <p className="mt-1 text-xs font-semibold leading-relaxed text-[var(--foreground)]">
                   {shift.after}

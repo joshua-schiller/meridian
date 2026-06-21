@@ -177,6 +177,48 @@ export default function CampaignProgressPanel({ campaign }: CampaignProgressPane
           </ol>
         </section>
       )}
+
+      {campaign.id === "pulse-adoption" && (
+        <section className="bg-[var(--panel)] border border-[var(--line)] p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-3 border-b border-[var(--line)] pb-3">
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--foreground)]">
+                AI Calibration Loop
+              </h2>
+              <p className="mt-1 text-[11px] leading-relaxed text-[var(--muted)]">
+                Interview 8 shaped the Interview 9 plan.
+              </p>
+            </div>
+            <span className={`shrink-0 border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${isSynced ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-blue-200 bg-blue-50 text-[var(--accent)]"}`}>
+              {isSynced ? "Interview 9 Complete" : "Interview 9 Queued"}
+            </span>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-3 text-xs leading-relaxed">
+              <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+                Signal
+              </span>
+              <p className="text-slate-700">
+                Raj showed that power users need cross-team access, higher limits, and fewer guardrails.
+              </p>
+            </div>
+            <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-3 text-xs leading-relaxed">
+              <span className="text-[9px] font-extrabold uppercase tracking-widest text-[var(--accent)]">
+                Shift
+              </span>
+              <p className="font-semibold text-[var(--foreground)]">
+                Meridian used that contrast to ask Lucia whether non-technical Operations users need ready-made dashboards, clearer metric names, and freshness cues.
+              </p>
+            </div>
+            <p className="border-t border-slate-100 pt-3 text-[11px] leading-relaxed text-[var(--muted)]">
+              {isSynced
+                ? "Lucia's completed interview now updates the campaign from 8/10 to 9/10 and strengthens the non-technical dashboard finding."
+                : "Click sync to simulate Lucia's completed interview and promote the loop from 8/10 to 9/10."}
+            </p>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
