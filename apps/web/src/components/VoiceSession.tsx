@@ -162,12 +162,17 @@ export default function VoiceSession() {
           processorRef.current = processor;
           processor.onaudioprocess = (e) => {
             if (wsRef.current?.readyState !== WebSocket.OPEN) return;
-            if (agentBusyRef.current) return; // half-duplex: don't talk over the agent
             const input = e.inputBuffer.getChannelData(0);
             const pcm16 = new Int16Array(input.length);
-            for (let i = 0; i < input.length; i++) {
-              const s = Math.max(-1, Math.min(1, input[i]));
-              pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+            // Half-duplex: while the agent is speaking/thinking we send SILENCE
+            // (zeros) rather than the real mic. This keeps Deepgram's stream
+            // alive (it times out with no audio) while not feeding it the
+            // agent's own voice echoing back through the speakers.
+            if (!agentBusyRef.current) {
+              for (let i = 0; i < input.length; i++) {
+                const s = Math.max(-1, Math.min(1, input[i]));
+                pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+              }
             }
             wsRef.current.send(pcm16.buffer);
           };
