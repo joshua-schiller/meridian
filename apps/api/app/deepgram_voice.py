@@ -217,6 +217,7 @@ class VoiceSession:
         question_bank: QuestionBank,
         scripted: bool = False,
         voice: str | None = None,
+        use_claude: bool = True,
     ) -> None:
         self.ws = ws
         self.contact = contact
@@ -224,6 +225,9 @@ class VoiceSession:
         self.question_bank = question_bank
         self.scripted = scripted
         self.voice = voice
+        # When False, the agent reads the predetermined script verbatim (no
+        # Claude call per turn) — much lower latency, no live adaptation.
+        self.use_claude = use_claude
         self.turns: list[TranscriptTurn] = []
         self.question_idx = 0
         self._counter = 0
@@ -294,10 +298,10 @@ class VoiceSession:
         await self._send({"type": "transcript_final", "text": text, "turn_id": turn_id})
 
         question_idx = self.question_idx
-        # Use the live Claude interviewer in both scripted and live modes so the
-        # scripted demo path also reacts to what the interviewee said. The
-        # deterministic fallback still kicks in automatically when no API key.
-        if not _ant_key():
+        # Use the live Claude interviewer unless this session opted into the
+        # deterministic script (use_claude=False) for lower latency. The
+        # deterministic fallback also kicks in automatically when no API key.
+        if not self.use_claude or not _ant_key():
             response = self._fallback_agent_response(question_idx)
         else:
             response = await generate_interviewer_response(
@@ -323,7 +327,12 @@ class VoiceSession:
         )
 
     async def run(self) -> None:
-        opening = await generate_opening(self.contact, self.dossier, self.question_bank)
+        # Skip the Claude-generated opening in deterministic mode — read the
+        # scripted personalized opening straight from the question bank.
+        if self.use_claude and _ant_key():
+            opening = await generate_opening(self.contact, self.dossier, self.question_bank)
+        else:
+            opening = self.question_bank.personalized_opening
         await self._send({"type": "ready", "opening": opening})
         await self._agent_speak(opening)
 
@@ -355,13 +364,16 @@ class VoiceSession:
         # Deepgram the exact encoding rather than relying on container sniffing.
         from websockets.asyncio.client import connect as ws_connect
 
-        # Note: utterance_end_ms requires interim_results=true, so we use
-        # endpointing instead to get is_final segments on speech pauses.
+        # Turn-taking: enable interim results + utterance_end_ms so Deepgram
+        # tells us when the speaker has actually FINISHED (≈1.5s of silence)
+        # rather than finalizing on every short mid-sentence pause. We buffer
+        # the is_final segments and only emit a turn on UtteranceEnd, so a
+        # natural pause mid-answer never cuts the speaker off.
         dg_url = (
             "wss://api.deepgram.com/v1/listen"
             "?encoding=linear16&sample_rate=16000&channels=1"
             "&model=nova-2&language=en-US&smart_format=true"
-            "&interim_results=false&endpointing=800"
+            "&interim_results=true&utterance_end_ms=1500"
         )
 
         try:
@@ -401,18 +413,28 @@ class VoiceSession:
                     pass
 
         async def from_deepgram() -> None:
+            # Accumulate finalized segments and only flush them as one complete
+            # turn when Deepgram signals the utterance is over (UtteranceEnd),
+            # so a natural pause mid-answer doesn't cut the speaker off.
+            buffer: list[str] = []
             try:
                 async for raw in dg_ws:
                     evt = json.loads(raw)
-                    if evt.get("type") != "Results":
-                        continue
-                    alt = evt.get("channel", {}).get("alternatives", [{}])[0]
-                    text = (alt.get("transcript") or "").strip()
-                    if text and evt.get("is_final"):
-                        await transcript_queue.put(text)
+                    etype = evt.get("type")
+                    if etype == "Results":
+                        alt = evt.get("channel", {}).get("alternatives", [{}])[0]
+                        text = (alt.get("transcript") or "").strip()
+                        if text and evt.get("is_final"):
+                            buffer.append(text)
+                    elif etype == "UtteranceEnd":
+                        if buffer:
+                            await transcript_queue.put(" ".join(buffer))
+                            buffer = []
             except Exception:
                 pass
             finally:
+                if buffer:
+                    await transcript_queue.put(" ".join(buffer))
                 await transcript_queue.put(None)
 
         async def process_transcripts() -> None:
@@ -449,6 +471,7 @@ async def voice_session_endpoint(
     contact: str = "maya_chen",
     scripted: bool = False,
     voice: str | None = None,
+    claude: bool = True,
 ) -> None:
     contact_slug = contact
     contact = Contact.model_validate(
@@ -467,7 +490,13 @@ async def voice_session_endpoint(
 
     await ws.accept()
     session = VoiceSession(
-        ws, contact, dossier, question_bank, scripted=scripted, voice=selected_voice
+        ws,
+        contact,
+        dossier,
+        question_bank,
+        scripted=scripted,
+        voice=selected_voice,
+        use_claude=claude,
     )
     try:
         await session.run()
