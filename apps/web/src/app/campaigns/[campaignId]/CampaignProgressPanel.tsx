@@ -41,25 +41,68 @@ function SyncIcon() {
 
 export default function CampaignProgressPanel({ campaign }: CampaignProgressPanelProps) {
   const canSyncPulse = campaign.id === "pulse-adoption" && campaign.syncedCompletedInterviews != null;
-  const [isSynced, setIsSynced] = useState(false);
-  const completedCount = isSynced && campaign.syncedCompletedInterviews != null
-    ? campaign.syncedCompletedInterviews
-    : campaign.completedInterviews;
+  const maxStage = campaign.synced2CompletedInterviews != null ? 2 : 1;
+  // Sync stage: 0 = base (8 interviews), 1 = +Lucia (9), 2 = +Derek (10).
+  const [syncStage, setSyncStage] = useState(0);
+  const atMaxStage = syncStage >= maxStage;
+
+  const completedCount =
+    syncStage >= 2 && campaign.synced2CompletedInterviews != null
+      ? campaign.synced2CompletedInterviews
+      : syncStage >= 1 && campaign.syncedCompletedInterviews != null
+        ? campaign.syncedCompletedInterviews
+        : campaign.completedInterviews;
   const totalCount = campaign.totalInterviews;
   const { progressPercent, progressColor, statusLabel } = getProgressState(completedCount, totalCount);
   const radius = 45;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
-  const questions = useMemo(
-    () => (isSynced ? campaign.syncedCurrentQuestions : campaign.currentQuestions) ?? campaign.currentQuestions ?? [],
-    [campaign.currentQuestions, campaign.syncedCurrentQuestions, isSynced],
-  );
+  const questions = useMemo(() => {
+    if (syncStage >= 2) {
+      return (
+        campaign.synced2CurrentQuestions ??
+        campaign.syncedCurrentQuestions ??
+        campaign.currentQuestions ??
+        []
+      );
+    }
+    if (syncStage >= 1) return campaign.syncedCurrentQuestions ?? campaign.currentQuestions ?? [];
+    return campaign.currentQuestions ?? [];
+  }, [campaign.currentQuestions, campaign.syncedCurrentQuestions, campaign.synced2CurrentQuestions, syncStage]);
+
+  // Calibration-loop narrative for each stage of the sync.
+  const calibration = [
+    {
+      badge: "Interview 9 Queued",
+      badgeSynced: false,
+      subtitle: "Interview 8 shaped the Interview 9 plan.",
+      signal: "Raj showed that power users need cross-team access, higher limits, and fewer guardrails.",
+      shift: "Meridian used that contrast to ask Lucia whether non-technical Operations users need ready-made dashboards, clearer metric names, and freshness cues.",
+      footer: "Click sync to simulate Lucia's completed interview and promote the loop from 8/10 to 9/10.",
+    },
+    {
+      badge: "Interview 9 Complete",
+      badgeSynced: true,
+      subtitle: "Interview 9 shaped the Interview 10 plan.",
+      signal: "Lucia confirmed non-technical Operations users abandon Pulse without ready-made dashboards and plain-language metric names.",
+      shift: "Meridian carried that into Derek's interview — probing whether a senior, non-technical sales leader would return for a single pre-built summary view.",
+      footer: "Click sync again to simulate Derek's completed interview and close the loop from 9/10 to 10/10.",
+    },
+    {
+      badge: "Interview 10 Complete",
+      badgeSynced: true,
+      subtitle: "All ten planned interviews are complete.",
+      signal: "Derek — a Regional Sales Director — confirmed even senior leaders dread the query builder and just want one simple, trustworthy summary screen.",
+      shift: "That hardened the top recommendation: ship role-based, pre-built dashboards with plain-language metrics before anything else.",
+      footer: "Derek's interview closed the loop at 10/10 — every planned interview is now synthesized into the findings above.",
+    },
+  ][Math.min(syncStage, 2)];
 
   function handleSync() {
-    if (!canSyncPulse || isSynced) return;
-
-    setIsSynced(true);
-    window.dispatchEvent(new CustomEvent(PULSE_CAMPAIGN_SYNC_EVENT));
+    if (!canSyncPulse || atMaxStage) return;
+    const next = syncStage + 1;
+    setSyncStage(next);
+    window.dispatchEvent(new CustomEvent(PULSE_CAMPAIGN_SYNC_EVENT, { detail: { stage: next } }));
   }
 
   return (
@@ -71,7 +114,7 @@ export default function CampaignProgressPanel({ campaign }: CampaignProgressPane
             onClick={handleSync}
             aria-label="Sync completed interviews"
             title="Sync completed interviews"
-            className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center border border-[var(--line)] bg-white text-[var(--accent-ink)] shadow-sm transition hover:border-[var(--accent)] hover:text-[var(--accent)] ${isSynced ? "opacity-60" : "hover:scale-95"}`}
+            className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center border border-[var(--line)] bg-white text-[var(--accent-ink)] shadow-sm transition hover:border-[var(--accent)] hover:text-[var(--accent)] ${atMaxStage ? "opacity-60" : "hover:scale-95"}`}
           >
             <SyncIcon />
           </button>
@@ -186,11 +229,11 @@ export default function CampaignProgressPanel({ campaign }: CampaignProgressPane
                 AI Calibration Loop
               </h2>
               <p className="mt-1 text-[11px] leading-relaxed text-[var(--muted)]">
-                Interview 8 shaped the Interview 9 plan.
+                {calibration.subtitle}
               </p>
             </div>
-            <span className={`shrink-0 border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${isSynced ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-blue-200 bg-blue-50 text-[var(--accent)]"}`}>
-              {isSynced ? "Interview 9 Complete" : "Interview 9 Queued"}
+            <span className={`shrink-0 border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${calibration.badgeSynced ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-blue-200 bg-blue-50 text-[var(--accent)]"}`}>
+              {calibration.badge}
             </span>
           </div>
 
@@ -199,22 +242,16 @@ export default function CampaignProgressPanel({ campaign }: CampaignProgressPane
               <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
                 Signal
               </span>
-              <p className="text-slate-700">
-                Raj showed that power users need cross-team access, higher limits, and fewer guardrails.
-              </p>
+              <p className="text-slate-700">{calibration.signal}</p>
             </div>
             <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-3 text-xs leading-relaxed">
               <span className="text-[9px] font-extrabold uppercase tracking-widest text-[var(--accent)]">
                 Shift
               </span>
-              <p className="font-semibold text-[var(--foreground)]">
-                Meridian used that contrast to ask Lucia whether non-technical Operations users need ready-made dashboards, clearer metric names, and freshness cues.
-              </p>
+              <p className="font-semibold text-[var(--foreground)]">{calibration.shift}</p>
             </div>
             <p className="border-t border-slate-100 pt-3 text-[11px] leading-relaxed text-[var(--muted)]">
-              {isSynced
-                ? "Lucia's completed interview now updates the campaign from 8/10 to 9/10 and strengthens the non-technical dashboard finding."
-                : "Click sync to simulate Lucia's completed interview and promote the loop from 8/10 to 9/10."}
+              {calibration.footer}
             </p>
           </div>
         </section>

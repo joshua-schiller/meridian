@@ -102,6 +102,7 @@ export default async function CampaignViewPage({ params }: CampaignViewPageProps
                 campaignId={campaign.id}
                 initialText={campaign.highLevelFindings}
                 syncedText={campaign.syncedHighLevelFindings}
+                synced2Text={campaign.synced2HighLevelFindings}
               />
             </section>
 
@@ -160,6 +161,7 @@ export default async function CampaignViewPage({ params }: CampaignViewPageProps
                             finding={finding}
                             completedCount={completedCount}
                             syncedCompletedCount={campaign.syncedCompletedInterviews}
+                            synced2CompletedCount={campaign.synced2CompletedInterviews}
                             fallbackRatio={confirmed}
                           />
                         </div>
