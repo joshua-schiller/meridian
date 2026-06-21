@@ -330,7 +330,7 @@ export default function Home() {
         <div className="w-full max-w-3xl">
           <PageHeader title="Create Campaign" onHome={goHome} />
 
-          <form onSubmit={handleCreateSubmit} className="relative mt-8 w-full">
+          <form onSubmit={handleCreateSubmit} noValidate className="relative mt-8 w-full">
             <section className="rounded-2xl border border-slate-200 bg-white/95 p-8 md:p-14 shadow-[0_12px_40px_rgba(10,102,194,0.04)] min-h-[420px] flex flex-col justify-between relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-100/20 to-transparent rounded-full blur-3xl pointer-events-none" />
 
@@ -389,8 +389,10 @@ export default function Home() {
                       <h3 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--foreground)]">Attach supporting documents</h3>
                       <p className="text-sm text-[var(--muted)] mt-1.5">Provide background docs (PRDs, design briefs, notes) to help the AI prepare.</p>
                     </div>
-                    {supportingFilesText ? (
-                      <div className="flex items-center justify-between gap-3 bg-emerald-50/50 border border-emerald-200/60 rounded-2xl p-5 transition mt-3">
+                    
+                    {/* Green confirmation box - always rendered conditionally, but inputs remain in DOM */}
+                    {supportingFilesText && (
+                      <div key="supporting-confirmation" className="flex items-center justify-between gap-3 bg-emerald-50/50 border border-emerald-200/60 rounded-2xl p-5 transition mt-3">
                         <div className="flex items-center gap-3 text-emerald-700 min-w-0">
                           <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -399,29 +401,35 @@ export default function Home() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setSupportingFilesText("")}
+                          onClick={() => {
+                            setSupportingFilesText("");
+                            const el = document.getElementById("supportingDocumentsInput") as HTMLInputElement;
+                            if (el) el.value = "";
+                          }}
                           className="text-sm font-bold text-slate-400 hover:text-rose-600 transition"
                         >
                           Clear
                         </button>
                       </div>
-                    ) : (
-                      <div className="relative border-2 border-dashed border-slate-300 hover:border-[var(--accent)] rounded-2xl py-12 px-8 bg-slate-50/40 hover:bg-slate-50/80 transition-all flex flex-col items-center justify-center text-center cursor-pointer mt-3">
-                        <svg className="w-10 h-10 text-slate-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                        </svg>
-                        <span className="text-sm font-bold text-slate-700">Select supporting documents</span>
-                        <span className="text-xs text-slate-500 mt-1">PDF, DOC, DOCX, MD (optional)</span>
-                        <input
-                          type="file"
-                          name="supportingDocuments"
-                          multiple
-                          accept=".pdf,.doc,.docx,.md,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown"
-                          onChange={handleSupportingDocsChange}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                      </div>
                     )}
+                    
+                    {/* Dropzone container - stays in DOM, toggles hidden style */}
+                    <div key="supporting-dropzone" className={`relative border-2 border-dashed border-slate-300 hover:border-[var(--accent)] rounded-2xl py-12 px-8 bg-slate-50/40 hover:bg-slate-50/80 transition-all flex flex-col items-center justify-center text-center cursor-pointer mt-3 ${supportingFilesText ? "hidden" : "flex"}`}>
+                      <svg className="w-10 h-10 text-slate-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <span className="text-sm font-bold text-slate-700">Select supporting documents</span>
+                      <span className="text-xs text-slate-500 mt-1">PDF, DOC, DOCX, MD (optional)</span>
+                      <input
+                        id="supportingDocumentsInput"
+                        type="file"
+                        name="supportingDocuments"
+                        multiple
+                        accept=".pdf,.doc,.docx,.md,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown"
+                        onChange={handleSupportingDocsChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -451,8 +459,10 @@ export default function Home() {
                       <h3 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--foreground)]">Upload contacts CSV</h3>
                       <p className="text-sm text-[var(--muted)] mt-1.5">Specify who the AI should call. Must contain headers: Name, Email, Company, Title.</p>
                     </div>
-                    {contactsFileText ? (
-                      <div className="flex items-center justify-between gap-3 bg-emerald-50/50 border border-emerald-200/60 rounded-2xl p-5 transition mt-3">
+                    
+                    {/* Green confirmation box */}
+                    {contactsFileText && (
+                      <div key="contacts-confirmation" className="flex items-center justify-between gap-3 bg-emerald-50/50 border border-emerald-200/60 rounded-2xl p-5 transition mt-3">
                         <div className="flex items-center gap-3 text-emerald-700 min-w-0">
                           <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -461,29 +471,35 @@ export default function Home() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setContactsFileText("")}
+                          onClick={() => {
+                            setContactsFileText("");
+                            const el = document.getElementById("contactsCsvInput") as HTMLInputElement;
+                            if (el) el.value = "";
+                          }}
                           className="text-xs font-bold text-slate-400 hover:text-rose-600 transition"
                         >
                           Clear
                         </button>
                       </div>
-                    ) : (
-                      <div className="relative border-2 border-dashed border-slate-300 hover:border-[var(--accent)] rounded-2xl py-12 px-8 bg-slate-50/40 hover:bg-slate-50/80 transition-all flex flex-col items-center justify-center text-center cursor-pointer mt-3">
-                        <svg className="w-10 h-10 text-slate-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span className="text-sm font-bold text-slate-700">Upload Contacts CSV</span>
-                        <span className="text-xs text-slate-500 mt-1">Required · CSV format containing name, email, company, title</span>
-                        <input
-                          required={createStep === 5}
-                          type="file"
-                          name="contactsCsv"
-                          accept=".csv,text/csv"
-                          onChange={handleContactsChange}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                      </div>
                     )}
+                    
+                    {/* Dropzone container - always in DOM, toggle display classes */}
+                    <div key="contacts-dropzone" className={`relative border-2 border-dashed border-slate-300 hover:border-[var(--accent)] rounded-2xl py-12 px-8 bg-slate-50/40 hover:bg-slate-50/80 transition-all flex flex-col items-center justify-center text-center cursor-pointer mt-3 ${contactsFileText ? "hidden" : "flex"}`}>
+                      <svg className="w-10 h-10 text-slate-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M12 4v16m8-8H4" />
+                      </svg>
+                      <span className="text-sm font-bold text-slate-700">Upload Contacts CSV</span>
+                      <span className="text-xs text-slate-500 mt-1">Required · CSV format containing name, email, company, title</span>
+                      <input
+                        id="contactsCsvInput"
+                        required={createStep === 5}
+                        type="file"
+                        name="contactsCsv"
+                        accept=".csv,text/csv"
+                        onChange={handleContactsChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -516,7 +532,11 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="inline-flex h-12 min-w-36 items-center justify-center rounded-2xl bg-[var(--accent)] hover:bg-[#0855a1] px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(10,102,194,0.18)] hover:shadow-[0_4px_24px_rgba(10,102,194,0.35)] transition-all duration-300 transform active:scale-95 ml-auto cursor-pointer"
+                  disabled={
+                    (createStep === 1 && !draft.name.trim()) ||
+                    (createStep === 2 && !draft.goal.trim())
+                  }
+                  className="inline-flex h-12 min-w-36 items-center justify-center rounded-2xl bg-[var(--accent)] hover:bg-[#0855a1] px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(10,102,194,0.18)] hover:shadow-[0_4px_24px_rgba(10,102,194,0.35)] transition-all duration-300 transform active:scale-95 ml-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
                   <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -526,7 +546,8 @@ export default function Home() {
               ) : (
                 <button
                   type="submit"
-                  className="inline-flex h-12 min-w-36 items-center justify-center rounded-2xl bg-[var(--accent)] hover:bg-[#0855a1] px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(10,102,194,0.18)] hover:shadow-[0_4px_24px_rgba(10,102,194,0.35)] transition-all duration-300 transform active:scale-95 ml-auto cursor-pointer"
+                  disabled={!contactsFileText}
+                  className="inline-flex h-12 min-w-36 items-center justify-center rounded-2xl bg-[var(--accent)] hover:bg-[#0855a1] px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(10,102,194,0.18)] hover:shadow-[0_4px_24px_rgba(10,102,194,0.35)] transition-all duration-300 transform active:scale-95 ml-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Create
                 </button>
