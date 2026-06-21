@@ -572,12 +572,22 @@ export default function Home() {
           <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <ul className="divide-y divide-slate-100">
               {questions.map((question, index) => (
-                <li key={`question-${index}`} className="grid grid-cols-[1fr_3.5rem] items-center group transition">
+                <li key={`question-${index}`} className="grid grid-cols-[1fr_3.5rem] items-stretch group transition">
                   <textarea
                     value={question}
-                    rows={2}
-                    onChange={(event) => updateQuestion(index, event.target.value)}
-                    className="min-h-14 resize-y border-0 bg-transparent px-5 py-3 text-sm leading-relaxed text-[var(--foreground)] outline-none transition focus:bg-[var(--accent-wash)]/20"
+                    rows={1}
+                    onChange={(event) => {
+                      updateQuestion(index, event.target.value);
+                      event.target.style.height = "auto";
+                      event.target.style.height = `${event.target.scrollHeight}px`;
+                    }}
+                    ref={(el) => {
+                      if (el) {
+                        el.style.height = "auto";
+                        el.style.height = `${el.scrollHeight}px`;
+                      }
+                    }}
+                    className="resize-none overflow-hidden border-0 bg-transparent px-5 py-3 text-sm leading-relaxed text-[var(--foreground)] outline-none transition focus:bg-[var(--accent-wash)]/20"
                     aria-label={`Question ${index + 1}`}
                   />
                   <button
