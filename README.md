@@ -81,19 +81,37 @@ Run the API:
 PYTHONPATH=packages/research_core uvicorn apps.api.app.main:app --reload --port 8001
 ```
 
+Optional Redis-backed memory:
+
+```bash
+export REDIS_URL=redis://localhost:6379/0
+export REDIS_KEY_PREFIX=meridian
+# Set to 1 only when the RedisJSON module is available; otherwise JSON payloads are stored as strings.
+export REDIS_USE_JSON=0
+```
+
 Open the unified demo console:
 
 ```text
 http://localhost:3000
 ```
 
-Use **Run scripted fallback** for the reliable rehearsal path. It lets Meridian conduct Interview 1 without external API keys, emits the same canonical transcript shape, runs `/research/run-transcript`, and prepares the stakeholder PDF from `/report/from-transcript.pdf`. Use **Start Live (microphone)** when `ANTHROPIC_API_KEY` and `DEEPGRAM_API_KEY` are configured.
+Use **Run scripted fallback** for the reliable rehearsal path. It lets Meridian conduct Interview 1 without external API keys, emits the same canonical transcript shape, runs `/research/run-transcript?mode=auto`, and prepares the stakeholder PDF from `/report/from-loop-result.pdf`. Use **Start Live (microphone)** when `ANTHROPIC_API_KEY` and `DEEPGRAM_API_KEY` are configured.
 
 Then call either loop mode:
 
 ```bash
 curl -X POST "http://localhost:8001/research/run-fixture?mode=deterministic"
 curl -X POST "http://localhost:8001/research/run-fixture?mode=claude"
+```
+
+When Redis is configured, those POST routes retrieve prior insight state before synthesis and persist the new `LoopResult`, living insight document, and next AI interview plan afterward. The loop response includes `memory.read`, `memory.write`, `metrics.persisted`, `metrics.memory_reads`, `metrics.memory_writes`, and `metrics.retrieved_context_items`. Without Redis, the loop still succeeds and reports memory as disabled.
+
+Inspect saved demo state:
+
+```bash
+curl "http://localhost:8001/demo/state"
+curl "http://localhost:8001/research/sessions/understand-why-pms-at-early-stage-startups-struggle-with-discovery-research"
 ```
 
 Generate the stakeholder report from the demo loop:

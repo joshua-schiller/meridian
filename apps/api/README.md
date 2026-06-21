@@ -24,6 +24,8 @@ Current endpoints:
 - `POST /report/from-transcript.pdf`
 - `POST /report/from-loop-result/markdown`
 - `POST /report/from-loop-result.pdf`
+- `GET /demo/state`
+- `GET /research/sessions/{session_id}`
 - `WS /voice/session`
 
 The API reads the same fixture files used by the web app and validates them through `packages/research_core`.
@@ -37,3 +39,12 @@ The API reads the same fixture files used by the web app and validates them thro
 `/voice/session?contact=maya_chen&scripted=true` runs the reliable scripted interview fallback. `scripted=false` streams microphone audio through Deepgram STT/TTS. When the session completes, the web UI posts the emitted canonical transcript to `/research/run-transcript?mode=auto`, then posts the returned `loop_result` to `/report/from-loop-result.pdf`.
 
 Use `mode=deterministic`, `mode=auto`, or `mode=claude`. Claude mode requires `ANTHROPIC_API_KEY`; `CLAUDE_MODEL` defaults to `claude-sonnet-4-5`. `mode=auto` uses Claude when the key is present, falls back to the deterministic transcript loop when the key is missing or Claude fails the contract, and reports `requested_mode`, `resolved_mode`, and `fallback_reason` in `metrics`.
+
+Redis memory is optional and non-load-bearing. When `REDIS_URL` is set, `/research/run-transcript` and `/research/run-fixture` retrieve the latest insight document for the session before synthesis, then persist the new `LoopResult`, living insight document, next question bank, and baseline bank after synthesis. Responses include `memory.read`, `memory.write`, and metrics such as `memory_reads`, `memory_writes`, `retrieved_context_items`, and `persisted`. When Redis is absent or unavailable, the adaptive loop still completes and reports memory as disabled or errored.
+
+Useful Redis checks:
+
+```bash
+curl "http://localhost:8001/demo/state"
+curl "http://localhost:8001/research/sessions/understand-why-pms-at-early-stage-startups-struggle-with-discovery-research"
+```

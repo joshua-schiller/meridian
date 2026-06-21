@@ -7,6 +7,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from apps.api.app.main import app
+from apps.api.app.redis_memory import InMemoryResearchMemory
 from research_core.claude_loop import ClaudeLoopError
 from research_core.fixture_io import load_demo_inputs
 from research_core.loop import run_adaptive_loop
@@ -39,6 +40,8 @@ class ResearchEndpointTests(unittest.TestCase):
             len(payload["question_bank_after"]["questions"]),
         )
         self.assertIn("loop_result", payload)
+        self.assertIn("memory", payload)
+        self.assertIn("persisted", payload["metrics"])
 
     def test_claude_mode_without_key_returns_clear_400(self) -> None:
         with warnings.catch_warnings(), patch.dict("os.environ", {}, clear=True):
@@ -139,6 +142,75 @@ class ResearchEndpointTests(unittest.TestCase):
         self.assertEqual(
             payload["metrics"]["grounded_questions"],
             len(payload["question_bank_after"]["questions"]),
+        )
+        self.assertEqual(payload["memory"]["read"]["status"], "disabled")
+
+    def test_run_transcript_persists_loop_payload_to_memory_store(self) -> None:
+        memory = InMemoryResearchMemory()
+        session_id = "test-session"
+        with (
+            warnings.catch_warnings(),
+            patch("apps.api.app.main.get_memory_store", return_value=memory),
+        ):
+            warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
+            client = TestClient(app)
+
+            response = client.post(
+                "/research/run-transcript",
+                json={"session_id": session_id, "transcript": load_fixture_transcript()},
+            )
+            state = client.get(f"/research/sessions/{session_id}")
+
+        response.raise_for_status()
+        state.raise_for_status()
+        payload = response.json()
+        snapshot = state.json()
+        self.assertEqual(payload["memory"]["read"]["status"], "miss")
+        self.assertTrue(payload["memory"]["write"]["persisted"])
+        self.assertTrue(payload["metrics"]["persisted"])
+        self.assertEqual(payload["metrics"]["memory_writes"], 1)
+        self.assertEqual(snapshot["latest_loop_result"]["id"], payload["loop_result"]["id"])
+        self.assertEqual(
+            snapshot["latest_insight_doc"]["id"],
+            payload["insight_doc_after"]["id"],
+        )
+        self.assertEqual(snapshot["event_ids"], [payload["loop_result"]["id"]])
+
+    def test_run_transcript_retrieves_prior_insight_doc_before_loop(self) -> None:
+        memory = InMemoryResearchMemory()
+        session_id = "seeded-session"
+        contact, dossier, transcript, prior_doc, baseline_bank = load_demo_inputs(FIXTURES_DIR)
+        seeded_result = run_adaptive_loop(
+            transcript=transcript,
+            prior_insight_doc=prior_doc,
+            contact=contact,
+            dossier=dossier,
+        )
+        memory.persist(
+            session_id=session_id,
+            loop_result=seeded_result,
+            baseline_question_bank=baseline_bank,
+        )
+
+        with (
+            warnings.catch_warnings(),
+            patch("apps.api.app.main.get_memory_store", return_value=memory),
+        ):
+            warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
+            client = TestClient(app)
+
+            response = client.post(
+                "/research/run-transcript",
+                json={"session_id": session_id, "transcript": load_fixture_transcript()},
+            )
+
+        response.raise_for_status()
+        payload = response.json()
+        self.assertEqual(payload["memory"]["read"]["status"], "hit")
+        self.assertGreater(payload["metrics"]["retrieved_context_items"], 0)
+        self.assertEqual(
+            payload["insight_doc_before"]["id"],
+            seeded_result.updated_insight_doc.id,
         )
 
     def test_report_from_transcript_endpoints_accept_canonical_transcript(self) -> None:

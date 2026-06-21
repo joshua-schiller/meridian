@@ -27,6 +27,14 @@ from research_core.report import (
     report_to_markdown,
 )
 from .deepgram_voice import router as voice_router
+from .redis_memory import (
+    DisabledResearchMemory,
+    MemoryRead,
+    MemoryWrite,
+    ResearchMemory,
+    build_memory_store,
+    session_id_for_goal,
+)
 
 load_dotenv()
 
@@ -57,6 +65,7 @@ app.include_router(voice_router)
 
 class TranscriptLoopRequest(BaseModel):
     transcript: Transcript
+    session_id: str | None = None
     prior_insight_doc: LivingInsightDocument | None = None
     baseline_question_bank: QuestionBank | None = None
     contact: Contact | None = None
@@ -68,6 +77,13 @@ class LoopReportRequest(BaseModel):
     contact: Contact | None = None
     dossier: Dossier | None = None
     baseline_question_bank: QuestionBank | None = None
+
+
+memory_store: ResearchMemory = build_memory_store()
+
+
+def get_memory_store() -> ResearchMemory:
+    return memory_store
 
 
 def read_fixture(relative_path: str) -> dict[str, Any]:
@@ -83,6 +99,10 @@ def loop_payload(
     contact: Contact | None,
     dossier: Dossier | None,
     mode: LoopMode,
+    session_id: str,
+    memory_read: MemoryRead,
+    memory_store: ResearchMemory,
+    persist_memory: bool,
 ) -> dict[str, Any]:
     requested_mode = mode
     resolved_mode = resolve_mode(mode)
@@ -113,6 +133,20 @@ def loop_payload(
     if requested_mode == "auto" and resolved_mode == "deterministic" and fallback_reason is None:
         fallback_reason = "ANTHROPIC_API_KEY missing; auto mode used deterministic fallback."
 
+    memory_write = MemoryWrite(
+        enabled=memory_read.enabled,
+        provider=memory_read.provider,
+        session_id=session_id,
+        status="skipped",
+        persisted=False,
+    )
+    if persist_memory:
+        memory_write = memory_store.persist(
+            session_id=session_id,
+            loop_result=result,
+            baseline_question_bank=baseline_question_bank,
+        )
+
     return {
         "transcript": transcript.model_dump(mode="json"),
         "insight_doc_before": prior_insight_doc.model_dump(mode="json"),
@@ -120,6 +154,11 @@ def loop_payload(
         "question_bank_before": baseline_question_bank.model_dump(mode="json"),
         "question_bank_after": result.next_question_bank.model_dump(mode="json"),
         "loop_result": result.model_dump(mode="json"),
+        "memory": {
+            "session_id": session_id,
+            "read": memory_read.to_payload(),
+            "write": memory_write.to_payload(),
+        },
         "metrics": {
             "specificity_before": average_specificity(baseline_question_bank),
             "specificity_after": average_specificity(result.next_question_bank),
@@ -134,26 +173,48 @@ def loop_payload(
             "requested_mode": requested_mode,
             "resolved_mode": resolved_mode,
             "fallback_reason": fallback_reason,
+            "memory_reads": 1 if memory_read.enabled else 0,
+            "memory_writes": 1 if memory_write.persisted else 0,
+            "retrieved_context_items": memory_read.retrieved_context_items,
+            "persisted": memory_write.persisted,
         },
     }
 
 
 def request_context(
     request: TranscriptLoopRequest,
-) -> tuple[Contact, Dossier, LivingInsightDocument, QuestionBank]:
+    memory_store: ResearchMemory,
+) -> tuple[Contact, Dossier, LivingInsightDocument, QuestionBank, str, MemoryRead]:
     default_contact, default_dossier, _, default_prior_doc, default_baseline_bank = load_demo_inputs(
         FIXTURES_DIR
     )
+    session_id = request.session_id or session_id_for_goal(request.transcript.research_goal)
+    memory_read = memory_store.retrieve(
+        session_id=session_id,
+        research_goal=request.transcript.research_goal,
+    )
+    prior_insight_doc = request.prior_insight_doc or memory_read.insight_doc or default_prior_doc
     return (
         request.contact or default_contact,
         request.dossier or default_dossier,
-        request.prior_insight_doc or default_prior_doc,
+        prior_insight_doc,
         request.baseline_question_bank or default_baseline_bank,
+        session_id,
+        memory_read,
     )
 
 
-def run_transcript_request(request: TranscriptLoopRequest, mode: LoopMode) -> dict[str, Any]:
-    contact, dossier, prior_insight_doc, baseline_question_bank = request_context(request)
+def run_transcript_request(
+    request: TranscriptLoopRequest,
+    mode: LoopMode,
+    *,
+    persist_memory: bool = True,
+) -> dict[str, Any]:
+    store = get_memory_store()
+    contact, dossier, prior_insight_doc, baseline_question_bank, session_id, memory_read = request_context(
+        request,
+        store,
+    )
     return loop_payload(
         transcript=request.transcript,
         prior_insight_doc=prior_insight_doc,
@@ -161,6 +222,10 @@ def run_transcript_request(request: TranscriptLoopRequest, mode: LoopMode) -> di
         contact=contact,
         dossier=dossier,
         mode=mode,
+        session_id=session_id,
+        memory_read=memory_read,
+        memory_store=store,
+        persist_memory=persist_memory,
     )
 
 
@@ -169,7 +234,10 @@ def report_from_transcript_request(
     mode: LoopMode,
 ) -> StakeholderReport:
     payload = run_transcript_request(request, mode)
-    contact, dossier, _, baseline_question_bank = request_context(request)
+    contact, dossier, _, baseline_question_bank, _, _ = request_context(
+        request,
+        DisabledResearchMemory("Report rendering already has a loop payload."),
+    )
     return build_stakeholder_report(
         loop_result=LoopResult.model_validate(payload["loop_result"]),
         contact=contact,
@@ -226,25 +294,45 @@ def demo_fixtures() -> dict[str, Any]:
 
 def build_demo_loop_payload(mode: LoopMode = "deterministic") -> dict[str, Any]:
     contact, dossier, transcript, prior_insight_doc, baseline_question_bank = load_demo_inputs(FIXTURES_DIR)
+    session_id = session_id_for_goal(transcript.research_goal)
+    store = get_memory_store()
+    memory_read = store.retrieve(
+        session_id=session_id,
+        research_goal=transcript.research_goal,
+    )
     return loop_payload(
         transcript=transcript,
-        prior_insight_doc=prior_insight_doc,
+        prior_insight_doc=memory_read.insight_doc or prior_insight_doc,
         baseline_question_bank=baseline_question_bank,
         contact=contact,
         dossier=dossier,
         mode=mode,
+        session_id=session_id,
+        memory_read=memory_read,
+        memory_store=store,
+        persist_memory=False,
     )
 
 
 def build_demo_report(mode: LoopMode = "deterministic") -> StakeholderReport:
     contact, dossier, transcript, prior_insight_doc, baseline_question_bank = load_demo_inputs(FIXTURES_DIR)
+    session_id = session_id_for_goal(transcript.research_goal)
+    store = get_memory_store()
+    memory_read = store.retrieve(
+        session_id=session_id,
+        research_goal=transcript.research_goal,
+    )
     payload = loop_payload(
         transcript=transcript,
-        prior_insight_doc=prior_insight_doc,
+        prior_insight_doc=memory_read.insight_doc or prior_insight_doc,
         baseline_question_bank=baseline_question_bank,
         contact=contact,
         dossier=dossier,
         mode=mode,
+        session_id=session_id,
+        memory_read=memory_read,
+        memory_store=store,
+        persist_memory=False,
     )
     return build_stakeholder_report(
         loop_result=LoopResult.model_validate(payload["loop_result"]),
@@ -261,7 +349,25 @@ def demo_adaptive_loop(mode: LoopMode = "deterministic") -> dict[str, Any]:
 
 @app.post("/research/run-fixture")
 def research_run_fixture(mode: LoopMode = "deterministic") -> dict[str, Any]:
-    return build_demo_loop_payload(mode)
+    contact, dossier, transcript, prior_insight_doc, baseline_question_bank = load_demo_inputs(FIXTURES_DIR)
+    session_id = session_id_for_goal(transcript.research_goal)
+    store = get_memory_store()
+    memory_read = store.retrieve(
+        session_id=session_id,
+        research_goal=transcript.research_goal,
+    )
+    return loop_payload(
+        transcript=transcript,
+        prior_insight_doc=memory_read.insight_doc or prior_insight_doc,
+        baseline_question_bank=baseline_question_bank,
+        contact=contact,
+        dossier=dossier,
+        mode=mode,
+        session_id=session_id,
+        memory_read=memory_read,
+        memory_store=store,
+        persist_memory=True,
+    )
 
 
 @app.post("/research/run-transcript")
@@ -270,6 +376,19 @@ def research_run_transcript(
     mode: LoopMode = "deterministic",
 ) -> dict[str, Any]:
     return run_transcript_request(request, mode)
+
+
+@app.get("/demo/state")
+def demo_state() -> dict[str, Any]:
+    _, _, transcript, _, _ = load_demo_inputs(FIXTURES_DIR)
+    return get_memory_store().snapshot(
+        session_id=session_id_for_goal(transcript.research_goal)
+    )
+
+
+@app.get("/research/sessions/{session_id}")
+def research_session_state(session_id: str) -> dict[str, Any]:
+    return get_memory_store().snapshot(session_id=session_id)
 
 
 @app.get("/demo/report/markdown")
