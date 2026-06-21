@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { type FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { type FormEvent, type KeyboardEvent, useState } from "react";
 
 import { campaigns as campaignFixtures } from "@/lib/campaigns";
 
@@ -131,29 +131,48 @@ function CampaignRowContent({ campaign }: { campaign: Campaign }) {
   );
 }
 
-function CampaignRow({ campaign }: { campaign: Campaign }) {
+function CampaignRow({ campaign, onOpen }: { campaign: Campaign; onOpen: (href: string) => void }) {
   const rowClassName =
-    "grid gap-3 px-4 py-4 transition md:grid-cols-[18rem_1fr_14rem_13rem] md:items-center md:gap-4 md:px-5";
+    "grid w-full gap-3 px-4 py-4 transition md:grid-cols-[18rem_1fr_14rem_13rem] md:items-center md:gap-4 md:px-5";
+  const isLinkedCampaign = Boolean(campaign.detailHref);
 
-  if (campaign.detailHref) {
-    return (
-      <Link
-        href={campaign.detailHref}
-        className={`${rowClassName} hover:bg-[var(--accent-wash)] focus:bg-[var(--accent-wash)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--accent)]`}
-      >
-        <CampaignRowContent campaign={campaign} />
-      </Link>
-    );
+  function openCampaign() {
+    if (campaign.detailHref) {
+      onOpen(campaign.detailHref);
+    }
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (!isLinkedCampaign) {
+      return;
+    }
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openCampaign();
+    }
   }
 
   return (
-    <div className={rowClassName}>
+    <div
+      role={isLinkedCampaign ? "link" : undefined}
+      tabIndex={isLinkedCampaign ? 0 : undefined}
+      aria-label={isLinkedCampaign ? `Open ${campaign.name}` : undefined}
+      onClick={isLinkedCampaign ? openCampaign : undefined}
+      onKeyDown={isLinkedCampaign ? handleKeyDown : undefined}
+      className={`${rowClassName} ${
+        isLinkedCampaign
+          ? "cursor-pointer hover:bg-[var(--accent-wash)] focus:bg-[var(--accent-wash)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--accent)]"
+          : ""
+      }`}
+    >
       <CampaignRowContent campaign={campaign} />
     </div>
   );
 }
 
 export default function Home() {
+  const router = useRouter();
   const [view, setView] = useState<View>("home");
   const [campaigns, setCampaigns] = useState(initialCampaigns);
   const [draft, setDraft] = useState<CampaignDraft>(emptyDraft);
@@ -171,6 +190,10 @@ export default function Home() {
   function goHome() {
     setView("home");
     scrollToTop();
+  }
+
+  function openCampaign(href: string) {
+    router.push(href);
   }
 
   async function handleCreateSubmit(event: FormEvent<HTMLFormElement>) {
@@ -423,7 +446,7 @@ export default function Home() {
           <ul className="divide-y divide-[var(--line)]">
             {campaigns.map((campaign) => (
               <li key={campaign.id}>
-                <CampaignRow campaign={campaign} />
+                <CampaignRow campaign={campaign} onOpen={openCampaign} />
               </li>
             ))}
           </ul>
