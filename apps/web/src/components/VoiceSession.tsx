@@ -23,6 +23,18 @@ const SCRIPTED_RESPONSES = [
 
 const API_WS_BASE =
   process.env.NEXT_PUBLIC_API_WS_URL ?? "ws://localhost:8001";
+const API_HTTP_BASE =
+  process.env.NEXT_PUBLIC_API_HTTP_URL ?? "http://localhost:8001";
+
+// Keep in sync with VOICE_CHOICES in apps/api/app/deepgram_voice.py
+const VOICES: { id: string; label: string; desc: string }[] = [
+  { id: "aura-2-thalia-en", label: "Thalia", desc: "Clear, confident, warm" },
+  { id: "aura-2-andromeda-en", label: "Andromeda", desc: "Casual, expressive" },
+  { id: "aura-2-cora-en", label: "Cora", desc: "Smooth, melodic" },
+  { id: "aura-2-helena-en", label: "Helena", desc: "Caring, natural" },
+  { id: "aura-2-apollo-en", label: "Apollo", desc: "Confident male" },
+  { id: "aura-2-orion-en", label: "Orion", desc: "Approachable male" },
+];
 
 export default function VoiceSession() {
   const [status, setStatus] = useState<Status>("idle");
@@ -33,8 +45,11 @@ export default function VoiceSession() {
     unknown
   > | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [selectedVoice, setSelectedVoice] = useState(VOICES[0].id);
+  const [sampling, setSampling] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
+  const sampleAudioRef = useRef<HTMLAudioElement | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -56,6 +71,18 @@ export default function VoiceSession() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [turns]);
+
+  const playSample = useCallback((voiceId: string) => {
+    setSelectedVoice(voiceId);
+    sampleAudioRef.current?.pause();
+    setSampling(voiceId);
+    const audio = new Audio(`${API_HTTP_BASE}/voice/sample?model=${voiceId}`);
+    sampleAudioRef.current = audio;
+    const clear = () => setSampling((v) => (v === voiceId ? null : v));
+    audio.onended = clear;
+    audio.onerror = clear;
+    audio.play().catch(clear);
+  }, []);
 
   const playAudio = useCallback((base64Data: string) => {
     // Serialize playback: stop anything currently playing so two responses
@@ -143,7 +170,7 @@ export default function VoiceSession() {
       }
 
       const ws = new WebSocket(
-        `${API_WS_BASE}/voice/session?contact=maya_chen&scripted=${scripted}`,
+        `${API_WS_BASE}/voice/session?contact=maya_chen&scripted=${scripted}&voice=${selectedVoice}`,
       );
       ws.binaryType = "arraybuffer";
       wsRef.current = ws;
@@ -191,7 +218,7 @@ export default function VoiceSession() {
       };
       ws.onclose = () => stopMic();
     },
-    [handleMessage, stopMic],
+    [handleMessage, stopMic, selectedVoice],
   );
 
   const injectScriptedResponse = useCallback(() => {
@@ -220,19 +247,60 @@ export default function VoiceSession() {
     <div className="flex flex-col gap-4">
       {/* Controls */}
       {status === "idle" && (
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => connect(true)}
-            className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
-          >
-            Start Demo (scripted)
-          </button>
-          <button
-            onClick={() => connect(false)}
-            className="rounded-md border border-[var(--line)] px-4 py-2 text-sm font-semibold hover:bg-[var(--panel-strong)]"
-          >
-            Start Live (microphone)
-          </button>
+        <div className="flex flex-col gap-4">
+          {/* Voice picker — click a voice to hear a sample; the selected one
+              is used for the interview. */}
+          <div className="rounded-lg border border-[var(--line)] p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+              Interviewer voice · click to preview
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {VOICES.map((v) => {
+                const active = selectedVoice === v.id;
+                return (
+                  <button
+                    key={v.id}
+                    onClick={() => playSample(v.id)}
+                    className={`flex items-center gap-2 rounded-md border px-3 py-2 text-left transition ${
+                      active
+                        ? "border-[var(--accent)] bg-[var(--panel-strong)]"
+                        : "border-[var(--line)] hover:bg-[var(--panel-strong)]"
+                    }`}
+                  >
+                    <span className="text-base leading-none">
+                      {sampling === v.id ? "🔊" : "▶"}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold">
+                        {v.label}
+                        {active ? (
+                          <span className="ml-1 text-[var(--accent)]">✓</span>
+                        ) : null}
+                      </span>
+                      <span className="block truncate text-xs text-[var(--muted)]">
+                        {v.desc}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => connect(true)}
+              className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+            >
+              Start Demo (scripted)
+            </button>
+            <button
+              onClick={() => connect(false)}
+              className="rounded-md border border-[var(--line)] px-4 py-2 text-sm font-semibold hover:bg-[var(--panel-strong)]"
+            >
+              Start Live (microphone)
+            </button>
+          </div>
         </div>
       )}
 

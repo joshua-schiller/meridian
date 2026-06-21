@@ -10,7 +10,7 @@ from typing import Any
 
 import httpx
 from anthropic import AsyncAnthropic
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, Response, WebSocket, WebSocketDisconnect
 
 from research_core import Contact, Dossier, QuestionBank, Transcript, TranscriptTurn
 
@@ -28,7 +28,13 @@ def _ant_key() -> str:
     return os.environ.get("ANTHROPIC_API_KEY", "")
 
 
-async def synthesize_speech(text: str) -> bytes:
+# Aura-2 is Deepgram's newer, more natural/expressive TTS family. Override the
+# voice with DEEPGRAM_TTS_MODEL (e.g. aura-2-andromeda-en, aura-2-cora-en).
+def _tts_model() -> str:
+    return os.environ.get("DEEPGRAM_TTS_MODEL", "aura-2-thalia-en")
+
+
+async def synthesize_speech(text: str, model: str | None = None) -> bytes:
     async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.post(
             "https://api.deepgram.com/v1/speak",
@@ -37,10 +43,27 @@ async def synthesize_speech(text: str) -> bytes:
                 "Content-Type": "application/json",
             },
             json={"text": text},
-            params={"model": "aura-asteria-en"},
+            params={"model": model or _tts_model()},
         )
         resp.raise_for_status()
         return resp.content
+
+
+# Voices offered in the picker. Keep in sync with the frontend list.
+VOICE_CHOICES = {
+    "aura-2-thalia-en",
+    "aura-2-andromeda-en",
+    "aura-2-cora-en",
+    "aura-2-helena-en",
+    "aura-2-apollo-en",
+    "aura-2-orion-en",
+    "aura-asteria-en",
+}
+
+SAMPLE_LINE = (
+    "Oh, that's such a real tension — the insight arrives after the ship has "
+    "already sailed. Walk me through the last time that happened."
+)
 
 
 async def generate_interviewer_response(
@@ -155,12 +178,14 @@ class VoiceSession:
         dossier: Dossier,
         question_bank: QuestionBank,
         scripted: bool = False,
+        voice: str | None = None,
     ) -> None:
         self.ws = ws
         self.contact = contact
         self.dossier = dossier
         self.question_bank = question_bank
         self.scripted = scripted
+        self.voice = voice
         self.turns: list[TranscriptTurn] = []
         self.question_idx = 0
         self._counter = 0
@@ -184,7 +209,7 @@ class VoiceSession:
         )
         await self._send({"type": "agent_text", "text": text, "turn_id": turn_id})
         try:
-            audio_bytes = await synthesize_speech(text)
+            audio_bytes = await synthesize_speech(text, self.voice)
             await self._send(
                 {
                     "type": "agent_audio",
@@ -338,11 +363,25 @@ class VoiceSession:
             await consumer
 
 
+@router.get("/sample")
+async def voice_sample(model: str = "aura-2-thalia-en") -> Response:
+    """A short spoken sample of a given voice, for the voice picker."""
+    if model not in VOICE_CHOICES:
+        raise HTTPException(status_code=400, detail=f"Unknown voice: {model}")
+    audio = await synthesize_speech(SAMPLE_LINE, model)
+    return Response(
+        content=audio,
+        media_type="audio/mpeg",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
 @router.websocket("/session")
 async def voice_session_endpoint(
     ws: WebSocket,
     contact: str = "maya_chen",
     scripted: bool = False,
+    voice: str | None = None,
 ) -> None:
     contact_slug = contact
     contact = Contact.model_validate(
@@ -357,8 +396,12 @@ async def voice_session_endpoint(
         )
     )
 
+    selected_voice = voice if voice in VOICE_CHOICES else None
+
     await ws.accept()
-    session = VoiceSession(ws, contact, dossier, question_bank, scripted=scripted)
+    session = VoiceSession(
+        ws, contact, dossier, question_bank, scripted=scripted, voice=selected_voice
+    )
     try:
         await session.run()
     except WebSocketDisconnect:
