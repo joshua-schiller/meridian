@@ -105,11 +105,6 @@ function CampaignRowContent({ campaign }: { campaign: Campaign }) {
         <h2 className="truncate text-base font-bold text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors">
           {campaign.name}
         </h2>
-        {campaign.contactsFileName ? (
-          <p className="mt-1.5 truncate font-mono text-[9px] font-bold text-[var(--muted)] bg-slate-100 border border-slate-200/50 px-2 py-0.5 rounded w-fit uppercase tracking-wider">
-            {campaign.contactsFileName}
-          </p>
-        ) : null}
       </div>
       <p className="min-w-0 text-sm leading-relaxed text-[var(--muted)] md:truncate">
         {campaign.goal}
