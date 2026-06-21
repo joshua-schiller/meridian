@@ -39,6 +39,208 @@ export type Campaign = {
 
 export const campaigns: Campaign[] = [
   {
+    "id": "pulse-adoption",
+    "title": "Pulse adoption",
+    "oneLineGoal": "Understand why internal teams aren't adopting Pulse, our internal analytics platform.",
+    "completedInterviews": 10,
+    "totalInterviews": 10,
+    "contactsFileName": "pulse-contacts.csv",
+    "supportingDocumentNames": [
+      "pulse-overview.pdf"
+    ],
+    "questionCount": 3,
+    "highLevelFindings": "Across 10 internal interviews, adoption fails on trust, not features. The strongest patterns are stale data makes pulse unusable for operational and time-critical decisions (9/10), spreadsheets, source tools, and custom-built solutions become the real source of truth (8/10), data accuracy mismatches and known bugs destroy trust in pulse numbers (7/10). People revert to spreadsheets and source systems because they don't believe Pulse's numbers.",
+    "interviews": [
+      {
+        "id": "ic-001",
+        "interviewNumber": 1,
+        "participant": "Dana Whitfield",
+        "role": "Sales Operations Lead",
+        "company": "Lumen",
+        "status": "completed",
+        "summary": "Dana, a Sales Ops Lead, avoids Pulse because its query builder is too complex for simple pipeline numbers and it's painfully slow on real queries, so she defaults to exporting raw data into a shared spreadsheet.",
+        "highlights": [
+          "I opened it maybe twice last quarter.",
+          "I want to like it, because in theory everything I need is in there, but it just doesn't fit how I work day to day.",
+          "So last month my VP asked for total committed pipeline for the West region."
+        ]
+      },
+      {
+        "id": "ic-002",
+        "interviewNumber": 2,
+        "participant": "Marcus Lee",
+        "role": "Customer Support Lead",
+        "company": "Lumen",
+        "status": "completed",
+        "summary": "Marcus, a Customer Support Lead, doesn't adopt Pulse because its ticket data is hours stale rather than real-time and its counts don't reconcile with Zendesk, eroding his trust, though he'd switch if both were fixed.",
+        "highlights": [
+          "I've got a dashboard there for ticket volume, first response time, backlog by queue.",
+          "That's what we look at in standup every morning.",
+          "Pulse is kind of off to the side for us."
+        ]
+      },
+      {
+        "id": "ic-003",
+        "interviewNumber": 3,
+        "participant": "Priya Raman",
+        "role": "Data Engineer",
+        "company": "Lumen",
+        "status": "completed",
+        "summary": "Priya, a data engineer who maintains Pulse's pipelines, attributes low adoption to a six-hour-stale sync, a known join bug that double-counts and erodes trust, and constant access-permission friction, naming the trust-killing data bug as the top fix.",
+        "highlights": [
+          "Yeah, I own most of the ingestion jobs.",
+          "Honestly, from the inside it's rough.",
+          "I want teams to use Pulse, but I also know exactly where the bodies are buried, so I get why people drift back to their own spreadsheets."
+        ]
+      },
+      {
+        "id": "ic-004",
+        "interviewNumber": 4,
+        "participant": "Tomás Herrera",
+        "role": "Marketing Analyst",
+        "company": "Lumen",
+        "status": "completed",
+        "summary": "Tomás, a technical marketing power user, avoids Pulse because its numbers don't reconcile with Google Analytics and ad spend, so he rebuilds reports in his own Google Sheet and wishes Pulse let him write raw SQL instead of using the query builder.",
+        "highlights": [
+          "Maybe once, and usually just to grab a number before I leave.",
+          "I'm in our marketing dashboards and Google Sheets way more than I'm in Pulse.",
+          "The numbers in Pulse don't match Google Analytics or our ad spend, so I can't rely on it."
+        ]
+      },
+      {
+        "id": "ic-005",
+        "interviewNumber": 5,
+        "participant": "Grace Kim",
+        "role": "Finance Manager",
+        "company": "Lumen",
+        "status": "completed",
+        "summary": "Grace, a Finance Manager, won't adopt Pulse because its numbers don't reconcile with the general ledger and the data is stale during month-end close, the exact moment she needs reliable figures.",
+        "highlights": [
+          "I'll open it to eyeball a trend, but the moment something has to be official, I go back to the general ledger.",
+          "Everything I produce has to reconcile to the penny, and Pulse can't give me that.",
+          "Pulse disagrees with the general ledger, which is our actual source of truth, so finance can't use it for anything official."
+        ]
+      },
+      {
+        "id": "ic-006",
+        "interviewNumber": 6,
+        "participant": "Owen Bradley",
+        "role": "Customer Success Manager",
+        "company": "Lumen",
+        "status": "completed",
+        "summary": "Owen, a CSM, avoids Pulse because stale account health data surfaces churn signals too late, account-level access requires slow data-team requests, and the resulting staleness and gating leave him not trusting the data enough to use it in QBRs.",
+        "highlights": [
+          "I live in account health and renewals, so in theory Pulse should be my home base.",
+          "But I open it maybe once a week, glance at the dashboards, and then go back to pulling things manually or pinging the data team.",
+          "The account health data is days behind."
+        ]
+      },
+      {
+        "id": "ic-007",
+        "interviewNumber": 7,
+        "participant": "Hannah Ortiz",
+        "role": "Engineering Manager",
+        "company": "Lumen",
+        "status": "completed",
+        "summary": "Hannah's engineering team abandoned Pulse for a self-built Grafana dashboard on the raw tables, citing a lack of API and raw query access and a UI that lags badly on real data, with frequent SSO logouts as a minor gripe.",
+        "highlights": [
+          "We don't really use Pulse for it anymore.",
+          "About two months ago we gave up and built our own Grafana dashboard off the raw tables.",
+          "It does exactly what we need and nobody on my team has to fight the tool to get a number out."
+        ]
+      },
+      {
+        "id": "ic-008",
+        "interviewNumber": 8,
+        "participant": "Raj Patel",
+        "role": "Product Analyst",
+        "company": "Lumen",
+        "status": "completed",
+        "summary": "Raj, a power user, is frustrated that Pulse walls him off from cross-team data and times out on complex queries, and argues he'd adopt it fully if it offered more query power and bigger limits rather than tighter constraints.",
+        "highlights": [
+          "I'm in Pulse every single day, I push it harder than anyone on my team.",
+          "I run into the edges constantly, and the edges are where my actual work lives.",
+          "I was doing a cross-team analysis comparing our funnel against the onboarding team's."
+        ]
+      },
+      {
+        "id": "ic-009",
+        "interviewNumber": 9,
+        "participant": "Lucia Romano",
+        "role": "Operations Coordinator",
+        "company": "Lumen",
+        "status": "completed",
+        "summary": "Lucia, a non-technical Operations Coordinator, avoids Pulse because the query builder is intimidating and she has no idea where to start, instead wanting ready-made dashboards she can glance at rather than building anything, with confusing metric jargon adding to her distrust.",
+        "highlights": [
+          "It was a couple weeks ago, and I closed it almost right away.",
+          "I'm in Operations, I'm not a data person, and the second I land on that screen I feel a little out of my depth.",
+          "It drops you into this query builder thing, and the query builder is intimidating."
+        ]
+      },
+      {
+        "id": "ic-010",
+        "interviewNumber": 10,
+        "participant": "Derek Olsen",
+        "role": "Regional Sales Director",
+        "company": "Lumen",
+        "status": "completed",
+        "summary": "Derek, a senior non-technical sales director, dreads Pulse because it's too complex and only opens it weekly, wanting one simple pre-built summary screen of his region rather than a report builder, and routinely falls back to asking an analyst.",
+        "highlights": [
+          "I only open it about once a week, and I kind of dread it.",
+          "I'm running a region, I'm in and out of meetings all day.",
+          "Pulse is not where I want to spend twenty minutes hunting around."
+        ]
+      }
+    ],
+    "report": {
+      "executiveSummary": "Pulse has a confirmed trust crisis driven by three compounding bugs/gaps: a known join bug causing double-counting, a 6-hour (sometimes multi-day) sync lag, and zero data lineage or freshness transparency — together these cause users across every team to reject Pulse numbers before stakeholder meetings and revert to source systems or spreadsheets as their real source of truth. Adoption has effectively collapsed into workarounds: eight of ten interviewees have built or rely on a substitute (shared spreadsheets, Zendesk dashboards, Grafana, pandas notebooks, or manual analyst requests) — meaning Pulse is generating shadow infrastructure costs and analyst-queue backlog rather than self-serve value. There is a fundamental interface split: non-technical users (Sales, Support, CS, Finance, Ops) need pre-built, role-specific dashboards with plain-language metric names and zero query building, while technical users (Engineering, Marketing Analytics, Product Analysis) need raw SQL access, higher query/timeout limits, and an API — the current middle-ground UI satisfies neither group. Despite these barriers, latent demand is strong and conditional: all eight interviewees who described workarounds explicitly stated they would return to Pulse if trust, freshness, and access issues were resolved — this is a fixable adoption problem, not a product-concept rejection. Access permission friction compounds everything: multi-day ticket queues block new analysts at onboarding and lock power users out of cross-team data, routing work back to the data team and flooding Priya's queue — the permission model may be a legacy artifact rather than an intentional governance design.",
+      "findings": [
+        {
+          "title": "Stale data makes Pulse unusable for operational and time-critical decisions",
+          "body": "Data is stale by design (6-hour sync cycle, multi-day lags during close, or days-old account health signals), making Pulse structurally unfit for intraday, event-driven, customer-facing, or month-end decisions across multiple teams.",
+          "confidence": "High"
+        },
+        {
+          "title": "Spreadsheets, source tools, and custom-built solutions become the real source of truth",
+          "body": "Users across Sales Ops, Support, Marketing, Finance, Engineering, Customer Success, Product Analysis, and Operations bypass Pulse entirely — exporting to spreadsheets, staying in source systems, building their own dashboards, pulling data manually, waiting on the data team, or escaping to notebooks — which become the team's de facto source of truth.",
+          "confidence": "High"
+        },
+        {
+          "title": "Data accuracy mismatches and known bugs destroy trust in Pulse numbers",
+          "body": "When Pulse figures disagree with source-system numbers, users lose confidence in all Pulse data, stop presenting it to stakeholders, and rebuild figures manually to defend in meetings.",
+          "confidence": "High"
+        },
+        {
+          "title": "Query builder too complex for power users and non-technical users alike — but for opposite reasons",
+          "body": "Non-technical users find the query builder overwhelming for simple tasks, while technical users hit a ceiling when they need advanced SQL constructs, higher query limits, or API access — the tool satisfies neither end of the spectrum.",
+          "confidence": "High"
+        },
+        {
+          "title": "Absence of data lineage, freshness indicators, and plain-language metric definitions forces users to distrust Pulse by default",
+          "body": "Users cannot see when data was last refreshed or trace a Pulse number back to its source calculation; non-technical users additionally cannot decode jargon metric names to know if they've selected the right metric — forcing everyone to assume the worst and revert to source systems for anything consequential.",
+          "confidence": "High"
+        },
+        {
+          "title": "Slow query performance and timeouts undermine trust and usability",
+          "body": "Full-scale queries take so long to load — or time out entirely — that users abandon Pulse mid-workflow; the lag and timeout ceiling scale with data volume and query complexity, meaning the heaviest users suffer most.",
+          "confidence": "High"
+        }
+      ],
+      "contradictions": [
+        "There is a genuine tension between what different user types need from Pulse's query interface: non-technical users (Dana Whitfield, Marcus Lee, Grace Kim, Owen Bradley, Lucia Romano, Derek Olsen) want simpler pre-built dashboards, plain-language metric names, clear reconciled outputs, and less query-building complexity, while technical users (Tomás Herrera, Hannah Ortiz, Raj Patel, and implicitly Priya Raman) want more power — raw SQL access, higher query timeout limits, an API endpoint, window functions, and fewer guardrails. These are mutually exclusive interface philosophies; optimizing for one risks alienating the other. Hannah's team abandoned Pulse entirely for a custom Grafana dashboard, and Raj escapes to pandas notebooks, rather than work within the UI constraints. Derek explicitly said the new report builder is 'the opposite of what I need.'"
+      ],
+      "recommendedNextSteps": [
+        "Fix the confirmed join bug immediately and audit all affected data models (including the finance revenue model behind Grace's $40K GL mismatch and the marketing campaign table behind Tomás's 18% GA discrepancy) — this is the single highest-leverage trust restore action and should be treated as a P0 bug, not a roadmap item.",
+        "Ship a data freshness timestamp and inline metric definitions (hover-over plain-language descriptions and last-refreshed time) as a fast-follow UI change — this is a low-engineering-cost intervention that directly addresses the 'black box' and 'I can't decode this metric name' barriers cited by six interviewees and can precede any sync infrastructure work.",
+        "Accelerate the sync cadence toward near-real-time (or at minimum reduce the 6-hour cycle) and investigate whether Grace's month-end 2–3 day lag and Owen's account health delay share the same pipeline root cause as the 6-hour sync — resolving staleness unblocks the Support, CS, Finance, and Operations personas who need intraday or same-day data.",
+        "Run a two-track UX initiative in parallel: (a) build curated, pre-built role-specific starter dashboards for non-technical personas (Sales Director, CSM, Support Lead, Ops Coordinator, Finance) with plain-language metric names and no query-building required; (b) expose a raw SQL interface, configurable query timeout ceiling, and API endpoint for technical users (Engineering, Marketing Analytics, Product Analysis) — these tracks are not in conflict and can ship independently.",
+        "Redesign the permissions model with the data team: audit whether per-team scoping is an intentional governance decision or a legacy artifact, and evaluate row-level security or data-sharing agreements as alternatives to ticket-based access requests — the current model is the direct cause of new-analyst drop-off at onboarding and blocks the cross-team analyses that represent Pulse's highest-value use cases.",
+        "Present the full findings — especially the latent demand signal from all eight conditional adopters — to product and engineering leadership with a prioritized fix sequence: (1) join bug, (2) freshness timestamp + metric definitions, (3) sync cadence, (4) permissions redesign, (5) dual UX tracks — and confirm whether each item has an owner and a timeline on the current roadmap."
+      ],
+      "methodology": "Meridian conducted 10 voice interviews with internal Pulse users across teams. Each transcript updated a living insight document before the next interview plan was generated; findings confirmed by multiple people were promoted in confidence and one-off gripes treated as noise."
+    }
+  },
+  {
     id: "startup-pm-discovery",
     title: "Startup PM discovery research",
     oneLineGoal:

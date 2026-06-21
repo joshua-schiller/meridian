@@ -29,17 +29,29 @@ type CampaignDraft = {
   contactCount: number;
 };
 
-const initialCampaigns: Campaign[] = campaignFixtures.map((campaign) => ({
-  id: campaign.id,
-  name: campaign.title,
-  goal: campaign.oneLineGoal,
-  completedInterviews: campaign.completedInterviews,
-  totalInterviews: campaign.totalInterviews,
-  contactsFileName: campaign.contactsFileName,
-  supportingDocumentNames: campaign.supportingDocumentNames,
-  questionCount: campaign.questionCount,
-  detailHref: `/campaigns/${campaign.id}`,
-}));
+// The pre-baked "Pulse adoption" campaign holds real synthesized data, so it is
+// hidden from the list until the user actually creates a campaign — the data
+// technically does not exist before that.
+const GENERATED_CAMPAIGN_ID = "pulse-adoption";
+const STORAGE_KEY = "meridian-created-campaign";
+
+const pulseFixture = campaignFixtures.find(
+  (campaign) => campaign.id === GENERATED_CAMPAIGN_ID,
+);
+
+const initialCampaigns: Campaign[] = campaignFixtures
+  .filter((campaign) => campaign.id !== GENERATED_CAMPAIGN_ID)
+  .map((campaign) => ({
+    id: campaign.id,
+    name: campaign.title,
+    goal: campaign.oneLineGoal,
+    completedInterviews: campaign.completedInterviews,
+    totalInterviews: campaign.totalInterviews,
+    contactsFileName: campaign.contactsFileName,
+    supportingDocumentNames: campaign.supportingDocumentNames,
+    questionCount: campaign.questionCount,
+    detailHref: `/campaigns/${campaign.id}`,
+  }));
 
 const emptyDraft = (): CampaignDraft => ({
   name: "",
@@ -176,6 +188,21 @@ export default function Home() {
   const [contactsFileText, setContactsFileText] = useState<string>("");
   const [createStep, setCreateStep] = useState<number>(1);
 
+  // Once a campaign has been created in this session, surface it on the list.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.sessionStorage.getItem(STORAGE_KEY);
+    if (!stored) return;
+    try {
+      const created = JSON.parse(stored) as Campaign;
+      setCampaigns((current) =>
+        current.some((campaign) => campaign.id === created.id) ? current : [created, ...current],
+      );
+    } catch {
+      // ignore malformed storage
+    }
+  }, []);
+
   const nameInputRef = useRef<HTMLInputElement>(null);
   const goalInputRef = useRef<HTMLInputElement>(null);
   const contextTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -262,28 +289,37 @@ export default function Home() {
   }
 
   function startCampaign() {
-    if (!pendingCampaign) {
+    if (!pendingCampaign || !pulseFixture) {
       return;
     }
 
     const cleanedQuestions = questions.map((question) => question.trim()).filter(Boolean);
 
-    setCampaigns((currentCampaigns) => [
-      {
-        id: `campaign-${Date.now()}`,
-        name: pendingCampaign.name,
-        goal: pendingCampaign.goal,
-        completedInterviews: 0,
-        totalInterviews: pendingCampaign.contactCount,
-        contactsFileName: pendingCampaign.contactsFileName,
-        supportingDocumentNames: pendingCampaign.supportingDocumentNames,
-        additionalContext: pendingCampaign.additionalContext,
-        questionCount: cleanedQuestions.length,
-      },
-      ...currentCampaigns,
-    ]);
-    setView("success");
-    scrollToTop();
+    // Pressing create "runs" the campaign — it now points at the real synthesized
+    // results, which did not exist before this moment.
+    const created: Campaign = {
+      id: GENERATED_CAMPAIGN_ID,
+      name: pendingCampaign.name || pulseFixture.title,
+      goal: pendingCampaign.goal || pulseFixture.oneLineGoal,
+      completedInterviews: pulseFixture.completedInterviews,
+      totalInterviews: pulseFixture.totalInterviews,
+      contactsFileName: pendingCampaign.contactsFileName || pulseFixture.contactsFileName,
+      supportingDocumentNames: pendingCampaign.supportingDocumentNames,
+      additionalContext: pendingCampaign.additionalContext,
+      questionCount: cleanedQuestions.length,
+      detailHref: `/campaigns/${GENERATED_CAMPAIGN_ID}`,
+    };
+
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(created));
+    }
+
+    setCampaigns((currentCampaigns) =>
+      currentCampaigns.some((campaign) => campaign.id === created.id)
+        ? currentCampaigns
+        : [created, ...currentCampaigns],
+    );
+    router.push(created.detailHref!);
   }
 
   function handleSupportingDocsChange(e: React.ChangeEvent<HTMLInputElement>) {
