@@ -511,7 +511,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 text-sm font-bold text-[var(--foreground)] hover:bg-slate-50 transition shadow-sm active:scale-95 cursor-pointer"
+                  className="inline-flex h-12 items-center justify-center rounded-none border border-slate-200 bg-white px-6 text-sm font-bold text-[var(--foreground)] hover:bg-slate-50 transition shadow-sm active:scale-95 cursor-pointer"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
@@ -522,7 +522,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={goHome}
-                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 text-sm font-bold text-[var(--foreground)] hover:bg-slate-50 transition shadow-sm active:scale-95 cursor-pointer"
+                  className="inline-flex h-12 items-center justify-center rounded-none border border-slate-200 bg-white px-6 text-sm font-bold text-[var(--foreground)] hover:bg-slate-50 transition shadow-sm active:scale-95 cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -536,7 +536,7 @@ export default function Home() {
                     (createStep === 1 && !draft.name.trim()) ||
                     (createStep === 2 && !draft.goal.trim())
                   }
-                  className="inline-flex h-12 min-w-36 items-center justify-center rounded-2xl bg-[var(--accent)] hover:bg-[#0855a1] px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(10,102,194,0.18)] hover:shadow-[0_4px_24px_rgba(10,102,194,0.35)] transition-all duration-300 transform active:scale-95 ml-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex h-12 min-w-36 items-center justify-center rounded-none bg-[var(--accent)] hover:bg-[#0855a1] px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(10,102,194,0.18)] hover:shadow-[0_4px_24px_rgba(10,102,194,0.35)] transition-all duration-300 transform active:scale-95 ml-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
                   <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -547,7 +547,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={!contactsFileText}
-                  className="inline-flex h-12 min-w-36 items-center justify-center rounded-2xl bg-[var(--accent)] hover:bg-[#0855a1] px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(10,102,194,0.18)] hover:shadow-[0_4px_24px_rgba(10,102,194,0.35)] transition-all duration-300 transform active:scale-95 ml-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex h-12 min-w-36 items-center justify-center rounded-none bg-[var(--accent)] hover:bg-[#0855a1] px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(10,102,194,0.18)] hover:shadow-[0_4px_24px_rgba(10,102,194,0.35)] transition-all duration-300 transform active:scale-95 ml-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Create
                 </button>
