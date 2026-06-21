@@ -577,7 +577,7 @@ export default function Home() {
                     value={question}
                     rows={2}
                     onChange={(event) => updateQuestion(index, event.target.value)}
-                    className="min-h-20 resize-y border-0 bg-transparent px-5 py-4.5 text-sm leading-relaxed text-[var(--foreground)] outline-none transition focus:bg-[var(--accent-wash)]/20"
+                    className="min-h-14 resize-y border-0 bg-transparent px-5 py-3 text-sm leading-relaxed text-[var(--foreground)] outline-none transition focus:bg-[var(--accent-wash)]/20"
                     aria-label={`Question ${index + 1}`}
                   />
                   <button
