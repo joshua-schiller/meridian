@@ -1,6 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+type TranscriptTurn = {
+  speaker: string;
+  text: string;
+};
 
 type Interview = {
   id: string;
@@ -11,6 +16,7 @@ type Interview = {
   status: string;
   summary: string;
   highlights: string[];
+  transcript?: TranscriptTurn[];
 };
 
 export default function InterviewsConsoleList({ interviews }: { interviews: Interview[] }) {
@@ -103,6 +109,8 @@ export default function InterviewsConsoleList({ interviews }: { interviews: Inte
 
 function InterviewCard({ interview }: { interview: Interview }) {
   const isCompleted = interview.status === "completed";
+  const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
+  const hasTranscript = Boolean(interview.transcript && interview.transcript.length > 0);
   return (
     <article className="relative overflow-hidden rounded-none border border-slate-200 bg-white p-6 md:p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-5">
       {/* Status Vertical Bar */}
@@ -157,6 +165,106 @@ function InterviewCard({ interview }: { interview: Interview }) {
           </ul>
         </div>
       )}
+
+      {hasTranscript && (
+        <div className="pl-2 pt-1 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={() => setIsTranscriptOpen(true)}
+            className="mt-4 inline-flex items-center gap-2 border border-[var(--accent)]/30 bg-[var(--accent-wash)] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[var(--accent)] hover:bg-[var(--accent-soft)] hover:border-[var(--accent)]/60 transition-all duration-200 cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h8M8 8h8m-8 8h5M5 4h14a1 1 0 011 1v11a1 1 0 01-1 1h-6l-4 3v-3H5a1 1 0 01-1-1V5a1 1 0 011-1z" />
+            </svg>
+            View transcript
+          </button>
+        </div>
+      )}
+
+      {isTranscriptOpen && hasTranscript && (
+        <TranscriptModal interview={interview} onClose={() => setIsTranscriptOpen(false)} />
+      )}
     </article>
+  );
+}
+
+function TranscriptModal({ interview, onClose }: { interview: Interview; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  const turns = interview.transcript ?? [];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Transcript with ${interview.participant}`}
+    >
+      <div
+        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div className="relative z-10 flex max-h-[85vh] w-full max-w-2xl flex-col border border-slate-200 bg-white shadow-2xl">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-6 py-5">
+          <div>
+            <span className="text-[9px] font-extrabold uppercase tracking-widest text-[var(--accent)]">
+              Interview #{interview.interviewNumber} · Transcript
+            </span>
+            <h3 className="mt-0.5 text-lg font-bold text-[var(--foreground)]">{interview.participant}</h3>
+            <p className="text-xs text-[var(--muted)]">
+              {interview.role} at <strong className="font-semibold text-slate-700">{interview.company}</strong>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close transcript"
+            className="shrink-0 rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="grid gap-5">
+            {turns.map((turn, i) => {
+              const isAgent = turn.speaker === "agent";
+              return (
+                <div key={i} className={`flex flex-col gap-1.5 ${isAgent ? "items-start" : "items-end"}`}>
+                  <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+                    {isAgent ? "Meridian" : interview.participant}
+                  </span>
+                  <div
+                    className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed ${
+                      isAgent
+                        ? "bg-slate-50 border border-slate-200 text-slate-700"
+                        : "bg-[var(--accent-wash)] border border-[var(--accent)]/20 text-[var(--foreground)]"
+                    }`}
+                  >
+                    {turn.text}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

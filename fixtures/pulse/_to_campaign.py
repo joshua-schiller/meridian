@@ -86,6 +86,10 @@ for p in sorted((HERE / "transcripts").glob("pulse_interview_*.json")):
         "status": "completed",
         "summary": tr["summary"],
         "highlights": highlights,
+        "transcript": [
+            {"speaker": turn["speaker"], "text": turn["text"]}
+            for turn in tr["turns"]
+        ],
     })
 
 top = ", ".join(f'{t["label"].lower()} ({confirmers(t)}/10)' for t in themes_sorted[:3])

@@ -1,3 +1,8 @@
+export type TranscriptTurn = {
+  speaker: string;
+  text: string;
+};
+
 export type CampaignInterview = {
   id: string;
   interviewNumber: number;
@@ -7,6 +12,7 @@ export type CampaignInterview = {
   status: "completed" | "scheduled";
   summary: string;
   highlights: string[];
+  transcript?: TranscriptTurn[];
 };
 
 export type CampaignReportFinding = {
@@ -64,6 +70,56 @@ export const campaigns: Campaign[] = [
           "I opened it maybe twice last quarter.",
           "I want to like it, because in theory everything I need is in there, but it just doesn't fit how I work day to day.",
           "So last month my VP asked for total committed pipeline for the West region."
+        ],
+        "transcript": [
+          {
+            "speaker": "agent",
+            "text": "Thanks for making time, Dana. To start, how often do you actually use Pulse in a given week?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Honestly? Almost never anymore. I opened it maybe twice last quarter. I want to like it, because in theory everything I need is in there, but it just doesn't fit how I work day to day."
+          },
+          {
+            "speaker": "agent",
+            "text": "What happens when you do open it? Walk me through a recent attempt."
+          },
+          {
+            "speaker": "interviewee",
+            "text": "So last month my VP asked for total committed pipeline for the West region. Should be a thirty-second thing. But in Pulse it's too complex to get a simple pipeline number out of it. I couldn't figure out the query builder at all, all these joins and filters and dimension dropdowns. I just need one number."
+          },
+          {
+            "speaker": "agent",
+            "text": "When you couldn't get the query builder to cooperate, what did you do instead?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "What I always do. I pulled the raw opportunity export and so I just export it to a spreadsheet and do it there. Took me five minutes with a pivot table. My whole team basically lives in that shared sheet now, it's our real source of truth, not Pulse."
+          },
+          {
+            "speaker": "agent",
+            "text": "Setting the query builder aside, how does Pulse feel performance-wise when you run something real?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "That's the other killer. It's slow, it just spins when I run anything real. A small test query is fine, but the second I scope a full quarter across all reps it sits there with the little spinner forever. I've literally walked to get coffee and come back and it's still loading."
+          },
+          {
+            "speaker": "agent",
+            "text": "How does that compare to the spreadsheet workflow time-wise?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "It's not even close. The export plus pivot is faster than waiting on one Pulse query to load. When I'm in back-to-back deal reviews I can't afford to babysit a spinner, I need the number now. So the math just always lands on the spreadsheet."
+          },
+          {
+            "speaker": "agent",
+            "text": "If you could change one thing about Pulse, what would it be?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Make getting a basic pipeline number dead simple and fast, that's the whole game. Oh, and a small thing, I wish it had a mobile app so I could glance at pipeline from my phone between meetings. But really, fix the simple-number path and you'd get me back."
+          }
         ]
       },
       {
@@ -78,6 +134,56 @@ export const campaigns: Campaign[] = [
           "I've got a dashboard there for ticket volume, first response time, backlog by queue.",
           "That's what we look at in standup every morning.",
           "Pulse is kind of off to the side for us."
+        ],
+        "transcript": [
+          {
+            "speaker": "agent",
+            "text": "Thanks for making time, Marcus. To start, what does your team actually use to track support metrics day to day?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Honestly we live in Zendesk. I've got a dashboard there for ticket volume, first response time, backlog by queue. That's what we look at in standup every morning. Pulse is kind of off to the side for us."
+          },
+          {
+            "speaker": "agent",
+            "text": "Why off to the side? Pulse is supposed to pull in that same support data."
+          },
+          {
+            "speaker": "interviewee",
+            "text": "It does, technically. But the ticket data in Pulse is hours stale, it's not real-time. When we had that outage spike last month, my Zendesk view showed 200+ tickets flooding in and Pulse still said everything was calm. By the time it caught up the fire was already out. For support, hours-old is basically useless."
+          },
+          {
+            "speaker": "agent",
+            "text": "So the timing is the dealbreaker. Anything else that holds you back?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Yeah, and this one's worse honestly. The counts don't match what I see in Zendesk, so I don't trust it. Pulse will say we closed 340 tickets yesterday, Zendesk says 312. I have no idea which is right, and if I can't trust the number I'm not going to put it in front of my VP."
+          },
+          {
+            "speaker": "agent",
+            "text": "Did you ever try to figure out where the mismatch comes from?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "A little. I think Pulse counts merged tickets differently, or maybe it's a timezone thing on the day boundary. But that's the point, right? I shouldn't have to play detective. The first time the number is wrong, people stop believing all of them. My team already rolls their eyes when I pull up Pulse."
+          },
+          {
+            "speaker": "agent",
+            "text": "That makes sense. What would it take for you to actually switch your standup over to Pulse?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Two things. The numbers have to reconcile exactly with Zendesk, down to the ticket. And the data needs to be live, or near-live, like a few minutes behind at most. If it's real-time and the counts match, I'd happily switch because Pulse actually slices trends across teams better than Zendesk does. That part I do like."
+          },
+          {
+            "speaker": "agent",
+            "text": "Good to know there's a version of this you'd want. Anything small that just annoys you?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Oh, the Slack alerts. Pulse fires off so many notifications that I muted the channel weeks ago, the alerts are just too noisy. Which is a bit ironic, because now if Pulse ever did surface something useful in real-time, I'd never even see it."
+          }
         ]
       },
       {
@@ -92,6 +198,56 @@ export const campaigns: Campaign[] = [
           "Yeah, I own most of the ingestion jobs.",
           "Honestly, from the inside it's rough.",
           "I want teams to use Pulse, but I also know exactly where the bodies are buried, so I get why people drift back to their own spreadsheets."
+        ],
+        "transcript": [
+          {
+            "speaker": "agent",
+            "text": "Thanks for making time, Priya. You maintain the pipelines that feed Pulse, right? What does adoption look like from where you sit?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Yeah, I own most of the ingestion jobs. Honestly, from the inside it's rough. I want teams to use Pulse, but I also know exactly where the bodies are buried, so I get why people drift back to their own spreadsheets."
+          },
+          {
+            "speaker": "agent",
+            "text": "Where are the bodies buried? Start wherever feels biggest."
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Freshness, easily. The sync into Pulse only runs every six hours, so the data is stale by design. When the growth team opens a dashboard at 9am, they're looking at numbers from 3am. They notice, and they stop trusting it for anything time-sensitive."
+          },
+          {
+            "speaker": "agent",
+            "text": "Has that staleness actually changed how a team uses it?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Constantly. The sales ops folks ran their standup off Pulse for a week, then went back to a manual export because they couldn't trust intraday numbers. If the data is stale by design, you can't use it for the live decisions people actually care about."
+          },
+          {
+            "speaker": "agent",
+            "text": "You mentioned trust. Is there anything beyond freshness eroding it?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Yeah, and this one's worse because it's silent. There's a known join bug that double-counts in one of the models, so honestly the numbers are off and people noticed. Someone in finance cross-checked revenue against the source system and it didn't match. Once that happens once, they question every number."
+          },
+          {
+            "speaker": "agent",
+            "text": "How does the access side factor in, if at all?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "It's a huge drag. I'm flooded with access-request tickets from people who can't see the tables they need. A new analyst joins, opens Pulse, and half the datasets are greyed out. By the time their permissions clear, they've already given up and asked me to just pull the data for them. Oh, and the metric naming is inconsistent between teams, 'active_users' means three different things, which drives me a little crazy too."
+          },
+          {
+            "speaker": "agent",
+            "text": "If you could fix one of these tomorrow, which moves adoption most?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Fix the join bug first. Freshness and access are friction, but the double-count is the thing that quietly kills trust. If the numbers are off and people noticed, no amount of fresh data or smooth permissions will get them back. Earn the trust, then fix the rest."
+          }
         ]
       },
       {
@@ -106,6 +262,56 @@ export const campaigns: Campaign[] = [
           "Maybe once, and usually just to grab a number before I leave.",
           "I'm in our marketing dashboards and Google Sheets way more than I'm in Pulse.",
           "The numbers in Pulse don't match Google Analytics or our ad spend, so I can't rely on it."
+        ],
+        "transcript": [
+          {
+            "speaker": "agent",
+            "text": "Thanks for making time, Tomás. To start, how often do you actually open Pulse in a given week?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Honestly? Maybe once, and usually just to grab a number before I leave. I'm in our marketing dashboards and Google Sheets way more than I'm in Pulse."
+          },
+          {
+            "speaker": "agent",
+            "text": "Why does Pulse end up being the place you leave rather than stay?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "The big one is trust. The numbers in Pulse don't match Google Analytics or our ad spend, so I can't rely on it. Last month it showed our paid sessions about 18% lower than GA for the same week. When I can't reconcile it, I just stop believing the dashboard."
+          },
+          {
+            "speaker": "agent",
+            "text": "What do you do when the numbers don't line up like that?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "I just pull the raw data and rebuild everything in a Google Sheet. I export the campaign table, drop in our GA and spend numbers next to it, and reconcile by hand. It's tedious, but at least I know exactly where every figure came from."
+          },
+          {
+            "speaker": "agent",
+            "text": "That sounds like a lot of manual work. What keeps you doing it that way?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Because the sheet is mine and I trust it. Once I've rebuilt it, I can defend every cell in a meeting. With Pulse, if someone asks how a metric was calculated, I genuinely can't tell them, so I'd rather not put it in front of leadership."
+          },
+          {
+            "speaker": "agent",
+            "text": "If you could change one thing about how you query Pulse, what would it be?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Honestly I wish Pulse just let me write raw SQL instead of boxing me into the query builder. The builder is fine for simple cuts, but the second I want a window function or a weird join, I hit a wall. I'm technical, I'd rather just write the query than fight the dropdowns. Oh, and a dark mode wouldn't hurt either, my eyes are fried by 6pm."
+          },
+          {
+            "speaker": "agent",
+            "text": "If the numbers reconciled and you could write SQL, would you switch off the Google Sheet?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Probably, yeah. If I could write raw SQL and the totals actually matched GA and our ad spend, I'd have no reason to rebuild everything in a Google Sheet. The trust piece is the dealbreaker though, fix that first or I'll keep living in my own spreadsheet."
+          }
         ]
       },
       {
@@ -120,6 +326,56 @@ export const campaigns: Campaign[] = [
           "I'll open it to eyeball a trend, but the moment something has to be official, I go back to the general ledger.",
           "Everything I produce has to reconcile to the penny, and Pulse can't give me that.",
           "Pulse disagrees with the general ledger, which is our actual source of truth, so finance can't use it for anything official."
+        ],
+        "transcript": [
+          {
+            "speaker": "agent",
+            "text": "Thanks for making time, Grace. To start, how does Pulse fit into your day-to-day in Finance?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Honestly? It mostly doesn't. I'll open it to eyeball a trend, but the moment something has to be official, I go back to the general ledger. Everything I produce has to reconcile to the penny, and Pulse can't give me that."
+          },
+          {
+            "speaker": "agent",
+            "text": "When you say it can't give you that, what specifically goes wrong?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Pulse disagrees with the general ledger, which is our actual source of truth, so finance can't use it for anything official. Last quarter a revenue number in Pulse was off from the GL by about forty thousand dollars. I can't put a figure in front of the CFO that doesn't tie out. One mismatch and I lose all trust in the whole tool."
+          },
+          {
+            "speaker": "agent",
+            "text": "Do you know why those numbers diverge?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Nobody's ever been able to tell me cleanly. I think it pulls from a different cut of the data with its own logic on refunds and intercompany entries. But because I can't trace a number in Pulse back to a journal entry, it's a black box, and a black box doesn't reconcile."
+          },
+          {
+            "speaker": "agent",
+            "text": "Are there moments where you wish you could rely on it more?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Every single month-end. At month-end the data in Pulse is stale and lags the close, which is exactly when I need it. I'm doing accruals on the 3rd and Pulse is still showing me numbers from days ago. The one window where live analytics would actually help me, it's behind."
+          },
+          {
+            "speaker": "agent",
+            "text": "How stale are we talking?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "During close it can lag by two or three days. There's no timestamp telling me how fresh the data is, so I don't even know what I'm looking at. If the data lags the close, it's useless to me precisely in the period I care about most. Oh, and the Excel export formatting is a mess every time, merged cells and weird headers, so I reformat it by hand before I can use anything."
+          },
+          {
+            "speaker": "agent",
+            "text": "If one thing changed that made you trust Pulse, what would it be?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Make it reconcile to the general ledger, to the dollar, with a clear lineage back to journal entries, and refresh it fast enough to keep up with the close. Until Pulse agrees with our source of truth and stops lagging at month-end, finance simply can't use it for anything that counts."
+          }
         ]
       },
       {
@@ -134,6 +390,56 @@ export const campaigns: Campaign[] = [
           "I live in account health and renewals, so in theory Pulse should be my home base.",
           "But I open it maybe once a week, glance at the dashboards, and then go back to pulling things manually or pinging the data team.",
           "The account health data is days behind."
+        ],
+        "transcript": [
+          {
+            "speaker": "agent",
+            "text": "Thanks for making time, Owen. To start, can you walk me through where Pulse fits in your day-to-day as a CSM?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Honestly? It mostly doesn't. I live in account health and renewals, so in theory Pulse should be my home base. But I open it maybe once a week, glance at the dashboards, and then go back to pulling things manually or pinging the data team."
+          },
+          {
+            "speaker": "agent",
+            "text": "That's helpful. When you do open it, what's the first thing that trips you up?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "The account health data is days behind. So by the time I see a churn signal it's too late, the customer's already escalated to my VP or gone quiet. Last month a mid-market account churned and Pulse still showed them green three days after they'd told us they were leaving."
+          },
+          {
+            "speaker": "agent",
+            "text": "Ouch. So freshness is the core issue for churn signals?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "For me, yeah. A churn signal that's three days old isn't a signal, it's a postmortem. I need to act the morning a usage drop happens, not at the end of the week when the data finally rolls up."
+          },
+          {
+            "speaker": "agent",
+            "text": "Beyond freshness, is there anything about just getting to the data that slows you down?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "The permissions, completely. I have to file a request with the data team just to see account-level data, and it takes days. So for a brand-new account I'm assigned, I can't even pull their numbers until a ticket clears. That kills any momentum in the first week."
+          },
+          {
+            "speaker": "agent",
+            "text": "How does that access friction play into whether you rely on Pulse at all?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "It compounds. And because it's stale and gated, I don't fully trust it for QBRs. If I'm sitting in front of a customer presenting their own health score, I can't have the number be three days old or have just gotten unblocked that morning. I'd rather pull it myself from the source so I know it's right."
+          },
+          {
+            "speaker": "agent",
+            "text": "Last one, if you could change one thing about Pulse, what would it be?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Fix the freshness and the access first, those are the dealbreakers. Oh, and a small wish, I'd love if Pulse could just email me a per-customer digest automatically every morning instead of me logging in to dig. But that's minor next to trusting the data enough to put it in front of a customer."
+          }
         ]
       },
       {
@@ -148,6 +454,56 @@ export const campaigns: Campaign[] = [
           "We don't really use Pulse for it anymore.",
           "About two months ago we gave up and built our own Grafana dashboard off the raw tables.",
           "It does exactly what we need and nobody on my team has to fight the tool to get a number out."
+        ],
+        "transcript": [
+          {
+            "speaker": "agent",
+            "text": "Thanks for making time, Hannah. To start, how does your team currently get the analytics it needs day to day?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Honestly? We don't really use Pulse for it anymore. About two months ago we gave up and built our own Grafana dashboard off the raw tables. It does exactly what we need and nobody on my team has to fight the tool to get a number out."
+          },
+          {
+            "speaker": "agent",
+            "text": "That's a big step. What pushed you to build your own thing instead of staying in Pulse?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "A few things piled up, but the breaking point was that I kept hitting walls. Pulse gives you these pre-built views, and the second you want something slightly different, you're stuck. My engineers are perfectly capable of writing SQL. We didn't need hand-holding, we needed access."
+          },
+          {
+            "speaker": "agent",
+            "text": "When you say access, what would the ideal version of Pulse have given you?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "This is the thing people get wrong about my team. I don't want a UI, I want an API and raw query access so I can build what I need. Every time the roadmap is about prettier charts, I think, you're solving the wrong problem for me. Give me the data and an endpoint and get out of my way."
+          },
+          {
+            "speaker": "agent",
+            "text": "Got it. Setting the flexibility aside, how was the actual experience of using the Pulse interface?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Slow. And the Pulse UI is slow anyway, it lags when you load anything real. A toy dataset is fine, but the moment you point it at a quarter of production events, you're staring at a spinner for fifteen, twenty seconds. My team just stopped opening it because waiting felt worse than writing the query ourselves."
+          },
+          {
+            "speaker": "agent",
+            "text": "Did that performance issue come up for the whole team, or mostly the heavy users?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Mostly whoever was doing real work. The lag scales with how much you actually ask of it, so the people who needed it most got the worst experience. Oh, and the SSO logs me out constantly, which is its own little daily annoyance, but that's minor compared to the speed. The performance is the real reason it lags out of our workflow."
+          },
+          {
+            "speaker": "agent",
+            "text": "If we could change one thing to win your team back, what should it be?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Ship the API and raw query access, and make it fast on real data. If I had an endpoint I trusted and it didn't lag when I loaded anything real, I'd kill our Grafana dashboard tomorrow. But as long as the answer is another UI, my team is going to keep routing around Pulse and building our own."
+          }
         ]
       },
       {
@@ -162,6 +518,56 @@ export const campaigns: Campaign[] = [
           "I'm in Pulse every single day, I push it harder than anyone on my team.",
           "I run into the edges constantly, and the edges are where my actual work lives.",
           "I was doing a cross-team analysis comparing our funnel against the onboarding team's."
+        ],
+        "transcript": [
+          {
+            "speaker": "agent",
+            "text": "Thanks for making time, Raj. You're one of the heaviest Pulse users I could find, so I want to hear the unfiltered version. How would you describe your experience with it?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Honestly? Love-hate. I'm in Pulse every single day, I push it harder than anyone on my team. But the ceiling is low. I run into the edges constantly, and the edges are where my actual work lives."
+          },
+          {
+            "speaker": "agent",
+            "text": "Tell me about one of those edges from this week."
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Tuesday. I was doing a cross-team analysis comparing our funnel against the onboarding team's. And I keep hitting permission walls, I can't see other teams' data even when I need it for a cross-team analysis. So I filed an access request, waited two days, got half of it approved. The analysis was already stale by then."
+          },
+          {
+            "speaker": "agent",
+            "text": "How often does that access friction come up for you?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Weekly, easily. Almost every interesting question I have is cross-team, and that's exactly the data I'm walled off from. The permissions are scoped per team, so the moment I reach across a boundary I'm stuck filing tickets and pinging admins. It kills the momentum every time."
+          },
+          {
+            "speaker": "agent",
+            "text": "Set permissions aside for a second. When you do have the data, how does Pulse hold up?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "That's the other half of it. Any complex query I write just times out. The second I join more than a couple of tables or look at a wide date range, it spins and then dies. So I end up dumping raw data into my own notebook and doing the real work in pandas, which kind of defeats the whole point of having Pulse."
+          },
+          {
+            "speaker": "agent",
+            "text": "If you're already escaping to a notebook, what keeps you coming back to Pulse at all?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "The shared dashboards and the fact that it's the source of truth, when it works. And here's the thing people get wrong about adoption: I'd actually use it if it gave me more query power and bigger limits, not fewer. Everyone assumes power users churn because it's too complicated. For me it's the opposite, I churn because it's too constrained. Oh, and a small gripe, I wish dashboards had version history so I could see what changed when a number suddenly moves."
+          },
+          {
+            "speaker": "agent",
+            "text": "If you could change exactly one thing tomorrow, what would it be?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Raise the query timeout ceiling and let me opt into bigger limits, and fix the cross-team access so I'm not walled off from the data I need. Give me more room, not guardrails. Do that and I'd move my whole workflow into Pulse tomorrow instead of treating it as a glorified export button."
+          }
         ]
       },
       {
@@ -176,6 +582,56 @@ export const campaigns: Campaign[] = [
           "It was a couple weeks ago, and I closed it almost right away.",
           "I'm in Operations, I'm not a data person, and the second I land on that screen I feel a little out of my depth.",
           "It drops you into this query builder thing, and the query builder is intimidating."
+        ],
+        "transcript": [
+          {
+            "speaker": "agent",
+            "text": "Thanks for making time, Lucia. To start, can you tell me about the last time you opened Pulse?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Honestly? It was a couple weeks ago, and I closed it almost right away. I'm in Operations, I'm not a data person, and the second I land on that screen I feel a little out of my depth."
+          },
+          {
+            "speaker": "agent",
+            "text": "What was it about that screen that made you want to close it?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "It drops you into this query builder thing, and the query builder is intimidating. I open it and have no idea where to start. There are all these dropdowns and fields and operators, and I just sit there thinking, what am I supposed to put here?"
+          },
+          {
+            "speaker": "agent",
+            "text": "When you needed an answer, what did you do instead?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "I pinged someone on the analytics team and asked them to pull it for me. I needed shipment turnaround times for last month, and rather than fight with Pulse I just waited two days for them to send me a spreadsheet. Slower, but at least I didn't have to build anything."
+          },
+          {
+            "speaker": "agent",
+            "text": "If Pulse could be different, what would actually work for you?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "This is going to sound lazy, but I don't want to build anything. I just want a few ready-made dashboards I can glance at. Like, here's your team's numbers for the week, done. I don't need to slice and dice, I need answers without assembling them myself."
+          },
+          {
+            "speaker": "agent",
+            "text": "Was there anything else that tripped you up beyond the query builder?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Oh, and the metric names are confusing jargon I don't recognize. Half of them I have to guess at. Something will say 'DAU cohort delta' and I'm like, is that the thing I want? I genuinely can't tell, so I don't trust whatever I pick."
+          },
+          {
+            "speaker": "agent",
+            "text": "So if I handed you a perfect version tomorrow, what's the first thing you'd want to see?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "One simple dashboard with the three or four numbers my team cares about, in plain language, that I can open and immediately understand. No building, no guessing what a metric means. Just glance, get my answer, and get back to work."
+          }
         ]
       },
       {
@@ -190,6 +646,56 @@ export const campaigns: Campaign[] = [
           "I only open it about once a week, and I kind of dread it.",
           "I'm running a region, I'm in and out of meetings all day.",
           "Pulse is not where I want to spend twenty minutes hunting around."
+        ],
+        "transcript": [
+          {
+            "speaker": "agent",
+            "text": "Thanks for making time, Derek. To start, how often do you find yourself in Pulse?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Honestly? I only open it about once a week, and I kind of dread it. I'm running a region, I'm in and out of meetings all day. Pulse is not where I want to spend twenty minutes hunting around."
+          },
+          {
+            "speaker": "agent",
+            "text": "When you say you dread it, what's the part that makes you feel that way?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "It's too complex for me. I'm not a technical guy. I open it and there are filters, datasets, some query thing, tabs everywhere. I just want my regional number and I can't find it without clicking through five screens."
+          },
+          {
+            "speaker": "agent",
+            "text": "Walk me through the last time you actually tried to pull something."
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Last Monday I needed my West region bookings for the QBR. I went in, picked the wrong dataset apparently, got a number that looked off, second-guessed it, then just Slacked an analyst and asked her to send me the real figure. That's what I do every time, honestly."
+          },
+          {
+            "speaker": "agent",
+            "text": "If you could wave a wand, what would Pulse look like for you?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "I don't want to learn to build reports. I just want one simple summary screen of my region. Bookings, pipeline, attainment, the three things I actually care about, right there when I log in. No building, no filters. Just show me."
+          },
+          {
+            "speaker": "agent",
+            "text": "The team did add a report builder recently. Does that help at all?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "That's the opposite of what I need. A builder means more work for me. I'm not going to sit there assembling charts. Make it simpler, not more powerful. Give me the one screen and I'm a happy customer. Oh, and it'd be great as a mobile app, by the way, I'm on the road constantly and I'm never at my desk when I need a number."
+          },
+          {
+            "speaker": "agent",
+            "text": "That's really helpful. Last one: what would get you to actually rely on Pulse instead of pinging an analyst?"
+          },
+          {
+            "speaker": "interviewee",
+            "text": "Trust and speed. If I log in and my region's numbers are just there, simple, accurate, no hunting, I'd use it every day. Right now it's too complex for me and it's faster to ask a person. That's the whole story."
+          }
         ]
       }
     ],
