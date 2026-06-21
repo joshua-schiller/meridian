@@ -170,8 +170,10 @@ export default function IntervieweeSession() {
       return;
     }
 
+    // claude=false → the agent reads the predetermined script (no per-turn
+    // Claude call), which keeps latency low for the live interviewee call.
     const ws = new WebSocket(
-      `${API_WS_BASE}/voice/session?contact=maya_chen&scripted=false&voice=${VOICE}`,
+      `${API_WS_BASE}/voice/session?contact=maya_chen&scripted=false&voice=${VOICE}&claude=false`,
     );
     ws.binaryType = "arraybuffer";
     wsRef.current = ws;

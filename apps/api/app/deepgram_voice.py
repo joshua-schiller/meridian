@@ -217,6 +217,7 @@ class VoiceSession:
         question_bank: QuestionBank,
         scripted: bool = False,
         voice: str | None = None,
+        use_claude: bool = True,
     ) -> None:
         self.ws = ws
         self.contact = contact
@@ -224,6 +225,9 @@ class VoiceSession:
         self.question_bank = question_bank
         self.scripted = scripted
         self.voice = voice
+        # When False, the agent reads the predetermined script verbatim (no
+        # Claude call per turn) — much lower latency, no live adaptation.
+        self.use_claude = use_claude
         self.turns: list[TranscriptTurn] = []
         self.question_idx = 0
         self._counter = 0
@@ -294,10 +298,10 @@ class VoiceSession:
         await self._send({"type": "transcript_final", "text": text, "turn_id": turn_id})
 
         question_idx = self.question_idx
-        # Use the live Claude interviewer in both scripted and live modes so the
-        # scripted demo path also reacts to what the interviewee said. The
-        # deterministic fallback still kicks in automatically when no API key.
-        if not _ant_key():
+        # Use the live Claude interviewer unless this session opted into the
+        # deterministic script (use_claude=False) for lower latency. The
+        # deterministic fallback also kicks in automatically when no API key.
+        if not self.use_claude or not _ant_key():
             response = self._fallback_agent_response(question_idx)
         else:
             response = await generate_interviewer_response(
@@ -323,7 +327,12 @@ class VoiceSession:
         )
 
     async def run(self) -> None:
-        opening = await generate_opening(self.contact, self.dossier, self.question_bank)
+        # Skip the Claude-generated opening in deterministic mode — read the
+        # scripted personalized opening straight from the question bank.
+        if self.use_claude and _ant_key():
+            opening = await generate_opening(self.contact, self.dossier, self.question_bank)
+        else:
+            opening = self.question_bank.personalized_opening
         await self._send({"type": "ready", "opening": opening})
         await self._agent_speak(opening)
 
@@ -449,6 +458,7 @@ async def voice_session_endpoint(
     contact: str = "maya_chen",
     scripted: bool = False,
     voice: str | None = None,
+    claude: bool = True,
 ) -> None:
     contact_slug = contact
     contact = Contact.model_validate(
@@ -467,7 +477,13 @@ async def voice_session_endpoint(
 
     await ws.accept()
     session = VoiceSession(
-        ws, contact, dossier, question_bank, scripted=scripted, voice=selected_voice
+        ws,
+        contact,
+        dossier,
+        question_bank,
+        scripted=scripted,
+        voice=selected_voice,
+        use_claude=claude,
     )
     try:
         await session.run()
