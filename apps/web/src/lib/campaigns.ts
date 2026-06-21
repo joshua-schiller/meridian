@@ -57,7 +57,7 @@ export const campaigns: Campaign[] = [
       "pulse-overview.pdf"
     ],
     "questionCount": 3,
-    "highLevelFindings": "Across 10 internal interviews, adoption fails on trust, not features. The strongest patterns are stale data makes pulse unusable for operational and time-critical decisions (9/10), spreadsheets, source tools, and custom-built solutions become the real source of truth (8/10), data accuracy mismatches and known bugs destroy trust in pulse numbers (7/10). People revert to spreadsheets and source systems because they don't believe Pulse's numbers.",
+    "highLevelFindings": "Across 8 internal interviews, adoption fails on trust, not features. The strongest patterns are stale data makes pulse unusable for operational and time-critical decisions (7/8), spreadsheets, source tools, and custom-built solutions become the real source of truth (6/8), data accuracy mismatches and known bugs destroy trust in pulse numbers (5/8). People revert to spreadsheets and source systems because they don't believe Pulse's numbers.",
     "interviews": [
       {
         "id": "ic-001",
@@ -701,49 +701,49 @@ export const campaigns: Campaign[] = [
       }
     ],
     "report": {
-      "executiveSummary": "Pulse has a confirmed trust crisis driven by three compounding bugs/gaps: a known join bug causing double-counting, a 6-hour (sometimes multi-day) sync lag, and zero data lineage or freshness transparency — together these cause users across every team to reject Pulse numbers before stakeholder meetings and revert to source systems or spreadsheets as their real source of truth. Adoption has effectively collapsed into workarounds: eight of ten interviewees have built or rely on a substitute (shared spreadsheets, Zendesk dashboards, Grafana, pandas notebooks, or manual analyst requests) — meaning Pulse is generating shadow infrastructure costs and analyst-queue backlog rather than self-serve value. There is a fundamental interface split: non-technical users (Sales, Support, CS, Finance, Ops) need pre-built, role-specific dashboards with plain-language metric names and zero query building, while technical users (Engineering, Marketing Analytics, Product Analysis) need raw SQL access, higher query/timeout limits, and an API — the current middle-ground UI satisfies neither group. Despite these barriers, latent demand is strong and conditional: all eight interviewees who described workarounds explicitly stated they would return to Pulse if trust, freshness, and access issues were resolved — this is a fixable adoption problem, not a product-concept rejection. Access permission friction compounds everything: multi-day ticket queues block new analysts at onboarding and lock power users out of cross-team data, routing work back to the data team and flooding Priya's queue — the permission model may be a legacy artifact rather than an intentional governance design.",
+      "executiveSummary": "Pulse has a confirmed trust crisis driven by three compounding bugs/gaps: a known join bug causing double-counting, a 6-hour (sometimes multi-day) sync lag, and zero data lineage or freshness transparency — together these cause users across every team to reject Pulse numbers before stakeholder meetings and revert to source systems or spreadsheets as their real source of truth. Adoption has effectively collapsed into workarounds: six of eight interviewees have built or rely on a substitute (shared spreadsheets, Zendesk dashboards, Grafana, pandas notebooks, or manual analyst requests) — meaning Pulse is generating shadow infrastructure costs and analyst-queue backlog rather than self-serve value. There is a fundamental interface split: non-technical users (Sales, Support, CS, Finance, Ops) need pre-built, role-specific dashboards with plain-language metric names and zero query building, while technical users (Engineering, Marketing Analytics, Product Analysis) need raw SQL access, higher query/timeout limits, and an API — the current middle-ground UI satisfies neither group. Despite these barriers, latent demand is strong and conditional: all six interviewees who described workarounds explicitly stated they would return to Pulse if trust, freshness, and access issues were resolved — this is a fixable adoption problem, not a product-concept rejection. Access permission friction compounds everything: multi-day ticket queues block new analysts at onboarding and lock power users out of cross-team data, routing work back to the data team and flooding Priya's queue — the permission model may be a legacy artifact rather than an intentional governance design.",
       "findings": [
         {
           "title": "Stale data makes Pulse unusable for operational and time-critical decisions",
           "summary": "Pulse data is stale by design — a six-hour sync and multi-day close lags — so teams can't trust it for time-sensitive decisions.",
           "body": "Data is stale by design (6-hour sync cycle, multi-day lags during close, or days-old account health signals), making Pulse structurally unfit for intraday, event-driven, customer-facing, or month-end decisions across multiple teams.",
           "confidence": "High",
-          "supportCount": 9
+          "supportCount": 7
         },
         {
           "title": "Spreadsheets, source tools, and custom-built solutions become the real source of truth",
           "summary": "Teams across the company bypass Pulse, falling back to spreadsheets and self-built dashboards as their real source of truth.",
           "body": "Users across Sales Ops, Support, Marketing, Finance, Engineering, Customer Success, Product Analysis, and Operations bypass Pulse entirely — exporting to spreadsheets, staying in source systems, building their own dashboards, pulling data manually, waiting on the data team, or escaping to notebooks — which become the team's de facto source of truth.",
-          "confidence": "High",
-          "supportCount": 8
+          "confidence": "Medium",
+          "supportCount": 6
         },
         {
           "title": "Data accuracy mismatches and known bugs destroy trust in Pulse numbers",
           "summary": "When Pulse numbers don't match the source systems, people stop trusting all of it and rebuild the figures by hand.",
           "body": "When Pulse figures disagree with source-system numbers, users lose confidence in all Pulse data, stop presenting it to stakeholders, and rebuild figures manually to defend in meetings.",
           "confidence": "Medium",
-          "supportCount": 7
+          "supportCount": 5
         },
         {
           "title": "Query builder too complex for power users and non-technical users alike — but for opposite reasons",
           "summary": "The query builder overwhelms non-technical users yet boxes in power users — it satisfies neither end of the spectrum.",
           "body": "Non-technical users find the query builder overwhelming for simple tasks, while technical users hit a ceiling when they need advanced SQL constructs, higher query limits, or API access — the tool satisfies neither end of the spectrum.",
           "confidence": "Medium",
-          "supportCount": 6
+          "supportCount": 4
         },
         {
           "title": "Absence of data lineage, freshness indicators, and plain-language metric definitions forces users to distrust Pulse by default",
           "summary": "Pulse data is stale by design — a six-hour sync and multi-day close lags — so teams can't trust it for time-sensitive decisions.",
           "body": "Users cannot see when data was last refreshed or trace a Pulse number back to its source calculation; non-technical users additionally cannot decode jargon metric names to know if they've selected the right metric — forcing everyone to assume the worst and revert to source systems for anything consequential.",
           "confidence": "Medium",
-          "supportCount": 5
+          "supportCount": 4
         },
         {
           "title": "Slow query performance and timeouts undermine trust and usability",
           "summary": "Full-scale queries lag or time out, so users abandon Pulse mid-task — and the heaviest users suffer the most.",
           "body": "Full-scale queries take so long to load — or time out entirely — that users abandon Pulse mid-workflow; the lag and timeout ceiling scale with data volume and query complexity, meaning the heaviest users suffer most.",
           "confidence": "Low",
-          "supportCount": 4
+          "supportCount": 3
         }
       ],
       "contradictions": [
@@ -755,9 +755,9 @@ export const campaigns: Campaign[] = [
         "Accelerate the sync cadence toward near-real-time (or at minimum reduce the 6-hour cycle) and investigate whether Grace's month-end 2–3 day lag and Owen's account health delay share the same pipeline root cause as the 6-hour sync — resolving staleness unblocks the Support, CS, Finance, and Operations personas who need intraday or same-day data.",
         "Run a two-track UX initiative in parallel: (a) build curated, pre-built role-specific starter dashboards for non-technical personas (Sales Director, CSM, Support Lead, Ops Coordinator, Finance) with plain-language metric names and no query-building required; (b) expose a raw SQL interface, configurable query timeout ceiling, and API endpoint for technical users (Engineering, Marketing Analytics, Product Analysis) — these tracks are not in conflict and can ship independently.",
         "Redesign the permissions model with the data team: audit whether per-team scoping is an intentional governance decision or a legacy artifact, and evaluate row-level security or data-sharing agreements as alternatives to ticket-based access requests — the current model is the direct cause of new-analyst drop-off at onboarding and blocks the cross-team analyses that represent Pulse's highest-value use cases.",
-        "Present the full findings — especially the latent demand signal from all eight conditional adopters — to product and engineering leadership with a prioritized fix sequence: (1) join bug, (2) freshness timestamp + metric definitions, (3) sync cadence, (4) permissions redesign, (5) dual UX tracks — and confirm whether each item has an owner and a timeline on the current roadmap."
+        "Present the full findings — especially the latent demand signal from all six conditional adopters — to product and engineering leadership with a prioritized fix sequence: (1) join bug, (2) freshness timestamp + metric definitions, (3) sync cadence, (4) permissions redesign, (5) dual UX tracks — and confirm whether each item has an owner and a timeline on the current roadmap."
       ],
-      "methodology": "Meridian conducted 10 voice interviews with internal Pulse users across teams. Each transcript updated a living insight document before the next interview plan was generated; findings confirmed by multiple people were promoted in confidence and one-off gripes treated as noise."
+      "methodology": "Meridian conducted 8 voice interviews with internal Pulse users across teams. Each transcript updated a living insight document before the next interview plan was generated; findings confirmed by multiple people were promoted in confidence and one-off gripes treated as noise."
     }
   },
   {

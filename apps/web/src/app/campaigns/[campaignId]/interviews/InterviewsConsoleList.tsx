@@ -141,45 +141,56 @@ function InterviewCard({ interview }: { interview: Interview }) {
         </span>
       </div>
 
-      <div className="pl-2">
-        <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Interview Summary</h4>
-        <p className="text-sm leading-relaxed text-[var(--muted)]">{interview.summary}</p>
-      </div>
+      {isCompleted ? (
+        <>
+          <div className="pl-2">
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Interview Summary</h4>
+            <p className="text-sm leading-relaxed text-[var(--muted)]">{interview.summary}</p>
+          </div>
 
-      {interview.highlights.length > 0 && (
-        <div className="pl-2">
-          <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">Key Highlights</h4>
-          <ul className="grid gap-3">
-            {interview.highlights.map((highlight) => (
-              <li key={highlight} className="flex items-start gap-3 text-sm text-[var(--muted)] leading-relaxed">
-                {isCompleted ? (
-                  <svg className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                )}
-                <span>{highlight}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+          {interview.highlights.length > 0 && (
+            <div className="pl-2">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">Key Highlights</h4>
+              <ul className="grid gap-3">
+                {interview.highlights.map((highlight) => (
+                  <li key={highlight} className="flex items-start gap-3 text-sm text-[var(--muted)] leading-relaxed">
+                    <svg className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{highlight}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-      {hasTranscript && (
-        <div className="flex justify-end -mt-1">
-          <button
-            type="button"
-            onClick={() => setIsTranscriptOpen(true)}
-            className="inline-flex items-center gap-1.5 border border-[var(--accent)]/30 bg-[var(--accent-wash)] px-3 py-1.5 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent-soft)] hover:border-[var(--accent)]/60 transition-all duration-200 cursor-pointer"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h8M8 8h8m-8 8h5M5 4h14a1 1 0 011 1v11a1 1 0 01-1 1h-6l-4 3v-3H5a1 1 0 01-1-1V5a1 1 0 011-1z" />
-            </svg>
-            View transcript
-          </button>
+          {hasTranscript && (
+            <div className="flex justify-end -mt-1">
+              <button
+                type="button"
+                onClick={() => setIsTranscriptOpen(true)}
+                className="inline-flex items-center gap-1.5 border border-[var(--accent)]/30 bg-[var(--accent-wash)] px-3 py-1.5 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent-soft)] hover:border-[var(--accent)]/60 transition-all duration-200 cursor-pointer"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h8M8 8h8m-8 8h5M5 4h14a1 1 0 011 1v11a1 1 0 01-1 1h-6l-4 3v-3H5a1 1 0 01-1-1V5a1 1 0 011-1z" />
+                </svg>
+                View transcript
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="pl-2 flex items-center gap-3 py-2">
+          <span className="relative flex h-2.5 w-2.5 shrink-0">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500" />
+          </span>
+          <div>
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Synthesis pending</h4>
+            <p className="text-sm text-[var(--muted)]">
+              Interview in progress — summary and highlights will appear once it wraps.
+            </p>
+          </div>
         </div>
       )}
 
