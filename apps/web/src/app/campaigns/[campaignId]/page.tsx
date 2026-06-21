@@ -64,11 +64,6 @@ export default async function CampaignViewPage({ params }: CampaignViewPageProps
     (a, b) => confidenceRank[a.confidence] - confidenceRank[b.confidence],
   );
 
-  // Check for optional specificity trajectory
-  const hasSpecificity = "specificityStart" in campaign && "specificityFinal" in campaign;
-  const specificityStart = (campaign as any).specificityStart;
-  const specificityFinal = (campaign as any).specificityFinal;
-
   return (
     <main
       className="theme-premium min-h-screen py-6 px-4 sm:px-6 lg:px-8 font-sans"
@@ -263,29 +258,6 @@ export default async function CampaignViewPage({ params }: CampaignViewPageProps
                   Conflicts
                 </span>
               </div>
-
-              {/* Specificity Trajectory (Conditional render) */}
-              {hasSpecificity && (
-                <div className="col-span-2 bg-[var(--panel)] border border-[var(--line)] p-4 shadow-sm flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider block">
-                      Specificity Trajectory
-                    </span>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <span className="text-sm font-semibold text-[var(--muted)]">{specificityStart}%</span>
-                      <svg className="w-3.5 h-3.5 text-[var(--muted)]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                      </svg>
-                      <span className="text-sm font-bold text-[var(--accent-ink)]">{specificityFinal}%</span>
-                    </div>
-                  </div>
-                  <div className="h-8 w-16 bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden">
-                    <svg className="w-full h-full stroke-[var(--accent)] fill-none" preserveAspectRatio="none" viewBox="0 0 100 30">
-                      <path d="M0,25 L20,20 L40,22 L60,10 L80,15 L100,5" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
-                    </svg>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Quick Actions — Console view / Report view (now directly below the pill) */}

@@ -5,17 +5,17 @@ import { Campaign } from "@/lib/campaigns";
 const pulseQuestionProgression = [
   {
     before: "What makes you reach for another tool instead of Pulse?",
-    learned: "Dana's team treats a shared spreadsheet as the real source of truth.",
+    evidence: "Dana's team treats a shared spreadsheet as the real source of truth.",
     after: "Outside of Pulse, where does your team actually go to get the numbers it relies on day-to-day?",
   },
   {
     before: "Walk me through the last time you tried to get an answer from Pulse.",
-    learned: "The blocker was not awareness; it was the query builder, joins, filters, and slow full-quarter loads.",
+    evidence: "The blocker was not awareness; it was the query builder, joins, filters, and slow full-quarter loads.",
     after: "Have you ever tried to build a custom query or filter in Pulse, and what was that experience like?",
   },
   {
     before: "What would make Pulse part of your daily workflow?",
-    learned: "Dana's unlock was a simple, fast path to the few numbers she needs in meetings.",
+    evidence: "Dana's unlock was a simple, fast path to the few numbers she needs in meetings.",
     after: "If Pulse showed the three or four numbers most relevant to your work, no query building required, would that change how often you opened it?",
   },
 ];
@@ -177,7 +177,7 @@ export default function CampaignCalibrationTimeline({ campaign }: { campaign: Ca
 function PulseCalibrationTimeline() {
   return (
     <div className="border border-slate-200 bg-white p-5 shadow-sm mb-8 rounded-none md:p-6">
-      <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 mb-5 md:flex-row md:items-start md:justify-between">
+      <div className="border-b border-slate-100 pb-5 mb-5">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-base font-bold text-[var(--foreground)]">AI Calibration Loop</h3>
@@ -189,12 +189,6 @@ function PulseCalibrationTimeline() {
             Pulse adoption: Meridian used Dana's Interview 1 transcript to rewrite the Interview 2 plan for Marcus.
           </p>
         </div>
-
-        <div className="grid grid-cols-2 gap-2 text-left sm:grid-cols-3 md:min-w-[22rem]">
-          <MetricPill label="Specificity" value="0.30 -> 0.52" tone="blue" />
-          <MetricPill label="Grounded refs" value="0 -> 5" tone="emerald" />
-          <MetricPill label="New themes" value="0 -> 4" tone="slate" />
-        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)_minmax(0,1fr)]">
@@ -202,22 +196,17 @@ function PulseCalibrationTimeline() {
           eyebrow="Interview 1 plan"
           title="Broad starting questions"
           detail="Dana Whitfield, Sales Operations Lead"
-          badge="Specificity 0.30"
           questions={[
             "What makes you reach for another tool instead of Pulse?",
             "Walk me through the last time you tried to get an answer from Pulse.",
             "What would make Pulse part of your daily workflow?",
           ]}
-          tone="slate"
         />
 
         <div className="border border-blue-100 bg-blue-50/30 p-4">
           <div className="flex items-center justify-between gap-3">
             <span className="text-[9px] font-extrabold uppercase tracking-widest text-[var(--accent)]">
               Interview 1 transcript
-            </span>
-            <span className="shrink-0 rounded-full border border-blue-200 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--accent)]">
-              Learned
             </span>
           </div>
           <h4 className="mt-2 text-sm font-bold text-[var(--foreground)]">What changed after Dana</h4>
@@ -247,13 +236,11 @@ function PulseCalibrationTimeline() {
           eyebrow="Interview 2 plan"
           title="Sharper validation questions"
           detail="Marcus Lee, Customer Support Lead"
-          badge="Specificity 0.52"
           questions={[
             "Outside of Pulse, where does your team actually go to get the numbers it relies on day-to-day?",
             "Have you ever tried to build a custom query or filter in Pulse, and what was that experience like?",
             "If Pulse showed the three or four numbers most relevant to your work, no query building required, would that change how often you opened it?",
           ]}
-          tone="blue"
         />
       </div>
 
@@ -272,7 +259,7 @@ function PulseCalibrationTimeline() {
                 <span className="h-px flex-1 bg-blue-100" />
               </div>
 
-              <p className="text-xs leading-relaxed text-[var(--muted)]">{shift.learned}</p>
+              <p className="text-xs leading-relaxed text-[var(--muted)]">{shift.evidence}</p>
 
               <div className="mt-3 border-t border-slate-200 pt-3">
                 <span className="text-[9px] font-extrabold uppercase tracking-widest text-[var(--accent)]">
@@ -290,60 +277,22 @@ function PulseCalibrationTimeline() {
   );
 }
 
-function MetricPill({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: "blue" | "emerald" | "slate";
-}) {
-  const toneClass =
-    tone === "blue"
-      ? "border-blue-200 bg-blue-50 text-[var(--accent)]"
-      : tone === "emerald"
-        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-        : "border-slate-200 bg-slate-50 text-slate-700";
-
-  return (
-    <div className={`border px-3 py-2 ${toneClass}`}>
-      <span className="block text-[9px] font-extrabold uppercase tracking-widest opacity-75">{label}</span>
-      <span className="mt-0.5 block whitespace-nowrap text-sm font-extrabold leading-none">{value}</span>
-    </div>
-  );
-}
-
 function PlanColumn({
   eyebrow,
   title,
   detail,
-  badge,
   questions,
-  tone,
 }: {
   eyebrow: string;
   title: string;
   detail: string;
-  badge: string;
   questions: string[];
-  tone: "blue" | "slate";
 }) {
-  const badgeClass =
-    tone === "blue"
-      ? "border-blue-200 bg-blue-50 text-[var(--accent)]"
-      : "border-slate-200 bg-slate-50 text-slate-600";
-
   return (
     <div className="border border-slate-200 bg-white p-4">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
-          {eyebrow}
-        </span>
-        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${badgeClass}`}>
-          {badge}
-        </span>
-      </div>
+      <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+        {eyebrow}
+      </span>
       <h4 className="mt-2 text-sm font-bold text-[var(--foreground)]">{title}</h4>
       <p className="mt-1 text-xs text-[var(--muted)]">{detail}</p>
 
