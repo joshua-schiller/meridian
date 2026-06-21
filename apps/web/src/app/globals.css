@@ -100,6 +100,28 @@ select {
 }
 
 /* Custom Stepper Slide-In Transition */
+/*
+ * Premium "blue" theme — scoped to the campaign overview page only.
+ * Overrides the shared color tokens within the `.theme-premium` subtree so the
+ * rest of the app keeps the default theme untouched.
+ */
+.theme-premium {
+  --background: #f4f7fa;
+  --foreground: #0f172a;
+  --muted: #475569;
+  --panel-strong: #f8fafc;
+  --line: #e2e8f0;
+  --accent: #0a66c2;
+  --accent-ink: #004182;
+  --accent-soft: #e0f2fe;
+  --accent-wash: #eff6ff;
+  --status-ink: #166534;
+  --status-wash: #dcfce7;
+  --warn: #b45309;
+  --blue: #0a66c2;
+}
+
+/* Stepper / popover slide-in (used by the campaign Co-Pilot popover). */
 @keyframes slideIn {
   from {
     opacity: 0;
