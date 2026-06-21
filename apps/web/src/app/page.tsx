@@ -98,42 +98,60 @@ function scrollToTop() {
 }
 
 function CampaignRowContent({ campaign }: { campaign: Campaign }) {
+  const isCompleted = campaign.completedInterviews === campaign.totalInterviews;
   return (
     <>
       <div className="min-w-0">
-        <h2 className="truncate text-base font-semibold text-[var(--foreground)]">
+        <h2 className="truncate text-base font-bold text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors">
           {campaign.name}
         </h2>
         {campaign.contactsFileName ? (
-          <p className="mt-1 truncate font-mono text-xs text-[var(--muted)] md:hidden">
+          <p className="mt-1.5 truncate font-mono text-[9px] font-bold text-[var(--muted)] bg-slate-100 border border-slate-200/50 px-2 py-0.5 rounded w-fit uppercase tracking-wider">
             {campaign.contactsFileName}
           </p>
         ) : null}
       </div>
-      <p className="min-w-0 text-sm leading-6 text-[var(--muted)] md:truncate">
+      <p className="min-w-0 text-sm leading-relaxed text-[var(--muted)] md:truncate">
         {campaign.goal}
       </p>
-      <div className="flex flex-wrap gap-2 text-xs font-semibold text-[var(--accent-ink)]">
-        <span className="rounded bg-[var(--accent-wash)] px-2 py-1">
+      <div className="flex flex-wrap gap-2 text-[11px] font-bold">
+        <span className="inline-flex items-center rounded-lg bg-[var(--accent-wash)] px-2.5 py-1 text-[var(--accent)] border border-blue-100">
+          <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
           {campaign.totalInterviews} contacts
         </span>
-        <span className="rounded bg-[var(--panel-strong)] px-2 py-1">
+        <span className="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 text-slate-600 border border-slate-200">
+          <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
           {campaign.supportingDocumentNames?.length ?? 0} docs
         </span>
-        <span className="rounded bg-[var(--panel-strong)] px-2 py-1">
+        <span className="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 text-slate-600 border border-slate-200">
+          <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
           {campaign.questionCount} questions
         </span>
       </div>
-      <p className="font-mono text-sm font-semibold text-[var(--accent-ink)] md:text-right">
-        {campaign.completedInterviews}/{campaign.totalInterviews} interviews completed
-      </p>
+      <div className="flex flex-col gap-1.5 items-end justify-center">
+        <p className={`font-mono text-xs font-extrabold px-2 py-0.5 rounded-full border ${isCompleted ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-[var(--accent-wash)] text-[var(--accent)] border-blue-100"}`}>
+          {campaign.completedInterviews}/{campaign.totalInterviews} completed
+        </p>
+        <div className="w-24 bg-slate-200 h-1 rounded-full overflow-hidden hidden md:block">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${isCompleted ? "bg-emerald-500" : "bg-[var(--accent)]"}`}
+            style={{ width: `${(campaign.completedInterviews / campaign.totalInterviews) * 100}%` }}
+          />
+        </div>
+      </div>
     </>
   );
 }
 
 function CampaignRow({ campaign, onOpen }: { campaign: Campaign; onOpen: (href: string) => void }) {
   const rowClassName =
-    "grid w-full gap-3 px-4 py-4 transition md:grid-cols-[18rem_1fr_14rem_13rem] md:items-center md:gap-4 md:px-5";
+    "grid w-full gap-3 px-6 py-5 transition-all duration-200 md:grid-cols-[18rem_1fr_15rem_12rem] md:items-center md:gap-6 border-b border-slate-100 last:border-0 group";
   const isLinkedCampaign = Boolean(campaign.detailHref);
 
   function openCampaign() {
@@ -162,7 +180,7 @@ function CampaignRow({ campaign, onOpen }: { campaign: Campaign; onOpen: (href: 
       onKeyDown={isLinkedCampaign ? handleKeyDown : undefined}
       className={`${rowClassName} ${
         isLinkedCampaign
-          ? "cursor-pointer hover:bg-[var(--accent-wash)] focus:bg-[var(--accent-wash)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--accent)]"
+          ? "cursor-pointer hover:bg-[var(--accent-wash)]/40 focus:bg-[var(--accent-wash)]/40 focus:outline-none"
           : ""
       }`}
     >
@@ -178,11 +196,17 @@ export default function Home() {
   const [draft, setDraft] = useState<CampaignDraft>(emptyDraft);
   const [pendingCampaign, setPendingCampaign] = useState<CampaignDraft | null>(null);
   const [questions, setQuestions] = useState<string[]>(buildInitialQuestions(""));
+  const [supportingFilesText, setSupportingFilesText] = useState<string>("");
+  const [contactsFileText, setContactsFileText] = useState<string>("");
+  const [createStep, setCreateStep] = useState<number>(1);
 
   function openCreateCampaign() {
     setDraft(emptyDraft());
     setPendingCampaign(null);
     setQuestions(buildInitialQuestions(""));
+    setSupportingFilesText("");
+    setContactsFileText("");
+    setCreateStep(1);
     setView("create");
     scrollToTop();
   }
@@ -267,84 +291,246 @@ export default function Home() {
     scrollToTop();
   }
 
+  function handleSupportingDocsChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const names = Array.from(files).map((f) => f.name).join(", ");
+      setSupportingFilesText(names);
+    } else {
+      setSupportingFilesText("");
+    }
+  }
+
+  function handleContactsChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setContactsFileText(files[0].name);
+    } else {
+      setContactsFileText("");
+    }
+  }
+
+  function nextStep() {
+    if (createStep === 1 && !draft.name.trim()) return;
+    if (createStep === 2 && !draft.goal.trim()) return;
+    setCreateStep((s) => s + 1);
+    scrollToTop();
+  }
+
+  function prevStep() {
+    if (createStep > 1) {
+      setCreateStep((s) => s - 1);
+      scrollToTop();
+    }
+  }
+
   if (view === "create") {
     return (
-      <main className="min-h-screen px-4 py-6 md:px-8 md:py-8">
-        <div className="mx-auto max-w-5xl">
+      <main className="min-h-screen px-4 py-8 md:px-8 md:py-12 flex flex-col justify-center items-center">
+        <div className="w-full max-w-3xl">
           <PageHeader title="Create Campaign" onHome={goHome} />
 
-          <form onSubmit={handleCreateSubmit} className="relative mt-8 pb-24">
-            <section className="grid gap-5 rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4 shadow-sm md:p-6">
-              <label className="grid gap-2">
-                <span className="text-sm font-semibold text-[var(--foreground)]">Name</span>
-                <input
-                  required
-                  type="text"
-                  value={draft.name}
-                  onChange={(event) => setDraft({ ...draft, name: event.target.value })}
-                  className="h-11 rounded-md border border-[var(--line)] bg-white px-3 text-base text-[var(--foreground)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
-                />
-              </label>
+          <form onSubmit={handleCreateSubmit} className="relative mt-8 w-full">
+            <section className="rounded-2xl border border-slate-200 bg-white/95 p-8 md:p-14 shadow-[0_12px_40px_rgba(10,102,194,0.04)] min-h-[420px] flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-100/20 to-transparent rounded-full blur-3xl pointer-events-none" />
 
-              <label className="grid gap-2">
-                <span className="text-sm font-semibold text-[var(--foreground)]">Goal</span>
-                <input
-                  required
-                  type="text"
-                  value={draft.goal}
-                  onChange={(event) => setDraft({ ...draft, goal: event.target.value })}
-                  className="h-11 rounded-md border border-[var(--line)] bg-white px-3 text-base text-[var(--foreground)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
-                />
-              </label>
+              {/* Multi-step progress bar */}
+              <div className="mb-10">
+                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden shadow-inner">
+                  <div
+                    className="h-full bg-[var(--accent)] transition-all duration-300 rounded-full"
+                    style={{ width: `${(createStep / 5) * 100}%` }}
+                  />
+                </div>
+              </div>
 
-              <label className="grid gap-2">
-                <span className="text-sm font-semibold text-[var(--foreground)]">
-                  Supporting documents
-                </span>
-                <input
-                  type="file"
-                  name="supportingDocuments"
-                  multiple
-                  accept=".pdf,.doc,.docx,.md,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown"
-                  className="block min-h-11 rounded-md border border-dashed border-[var(--line)] bg-white px-3 py-2.5 text-sm text-[var(--muted)] file:mr-4 file:rounded-md file:border-0 file:bg-[var(--panel-strong)] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-[var(--foreground)] hover:border-[var(--accent-soft)]"
-                />
-              </label>
+              {/* Step Contents */}
+              <div className="flex-1 flex flex-col justify-center">
+                {/* Step 1: Campaign Name */}
+                <div className={createStep === 1 ? "block animate-step-in" : "hidden"}>
+                  <label className="grid gap-4">
+                    <div>
+                      <h3 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--foreground)]">What is the campaign name?</h3>
+                      <p className="text-sm text-[var(--muted)] mt-1.5">Give your discovery research campaign a clear, identifiable name.</p>
+                    </div>
+                    <input
+                      required={createStep === 1}
+                      type="text"
+                      placeholder="e.g. Developer APIs Feedback loop"
+                      value={draft.name}
+                      onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+                      className="h-14 rounded-2xl border border-slate-200 bg-white px-5 text-base text-[var(--foreground)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-blue-100/70 shadow-sm mt-3 w-full"
+                    />
+                  </label>
+                </div>
 
-              <label className="grid gap-2">
-                <span className="text-sm font-semibold text-[var(--foreground)]">
-                  Additional context
-                </span>
-                <textarea
-                  rows={8}
-                  value={draft.additionalContext}
-                  onChange={(event) =>
-                    setDraft({ ...draft, additionalContext: event.target.value })
-                  }
-                  className="min-h-40 resize-y rounded-md border border-[var(--line)] bg-white px-3 py-3 text-base leading-6 text-[var(--foreground)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
-                />
-              </label>
+                {/* Step 2: Research Goal */}
+                <div className={createStep === 2 ? "block animate-step-in" : "hidden"}>
+                  <label className="grid gap-4">
+                    <div>
+                      <h3 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--foreground)]">What is the research goal?</h3>
+                      <p className="text-sm text-[var(--muted)] mt-1.5">Define what you want the AI operator to learn from the participants.</p>
+                    </div>
+                    <input
+                      required={createStep === 2}
+                      type="text"
+                      placeholder="e.g. Find out why developers struggle with OAuth setup in React"
+                      value={draft.goal}
+                      onChange={(event) => setDraft({ ...draft, goal: event.target.value })}
+                      className="h-14 rounded-2xl border border-slate-200 bg-white px-5 text-base text-[var(--foreground)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-blue-100/70 shadow-sm mt-3 w-full"
+                    />
+                  </label>
+                </div>
 
-              <label className="grid gap-2">
-                <span className="text-sm font-semibold text-[var(--foreground)]">
-                  Contacts CSV
-                </span>
-                <input
-                  required
-                  type="file"
-                  name="contactsCsv"
-                  accept=".csv,text/csv"
-                  className="block min-h-11 rounded-md border border-dashed border-[var(--line)] bg-white px-3 py-2.5 text-sm text-[var(--muted)] file:mr-4 file:rounded-md file:border-0 file:bg-[var(--panel-strong)] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-[var(--foreground)] hover:border-[var(--accent-soft)]"
-                />
-              </label>
+                {/* Step 3: Supporting Documents */}
+                <div className={createStep === 3 ? "block animate-step-in" : "hidden"}>
+                  <div className="grid gap-4">
+                    <div>
+                      <h3 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--foreground)]">Attach supporting documents</h3>
+                      <p className="text-sm text-[var(--muted)] mt-1.5">Provide background docs (PRDs, design briefs, notes) to help the AI prepare.</p>
+                    </div>
+                    {supportingFilesText ? (
+                      <div className="flex items-center justify-between gap-3 bg-emerald-50/50 border border-emerald-200/60 rounded-2xl p-5 transition mt-3">
+                        <div className="flex items-center gap-3 text-emerald-700 min-w-0">
+                          <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-sm font-bold truncate">{supportingFilesText}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSupportingFilesText("")}
+                          className="text-sm font-bold text-slate-400 hover:text-rose-600 transition"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="relative border-2 border-dashed border-slate-300 hover:border-[var(--accent)] rounded-2xl py-12 px-8 bg-slate-50/40 hover:bg-slate-50/80 transition-all flex flex-col items-center justify-center text-center cursor-pointer mt-3">
+                        <svg className="w-10 h-10 text-slate-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <span className="text-sm font-bold text-slate-700">Select supporting documents</span>
+                        <span className="text-xs text-slate-500 mt-1">PDF, DOC, DOCX, MD (optional)</span>
+                        <input
+                          type="file"
+                          name="supportingDocuments"
+                          multiple
+                          accept=".pdf,.doc,.docx,.md,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown"
+                          onChange={handleSupportingDocsChange}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Step 4: Additional Context */}
+                <div className={createStep === 4 ? "block animate-step-in" : "hidden"}>
+                  <label className="grid gap-4">
+                    <div>
+                      <h3 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--foreground)]">Provide additional context</h3>
+                      <p className="text-sm text-[var(--muted)] mt-1.5">Add details, guidelines, or persona summaries to calibrate the AI operator.</p>
+                    </div>
+                    <textarea
+                      rows={5}
+                      placeholder="Context details or instructions to guide the AI operator..."
+                      value={draft.additionalContext}
+                      onChange={(event) =>
+                        setDraft({ ...draft, additionalContext: event.target.value })
+                      }
+                      className="min-h-36 resize-y rounded-2xl border border-slate-200 bg-white px-5 py-4 text-base leading-relaxed text-[var(--foreground)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-blue-100/70 shadow-sm mt-3"
+                    />
+                  </label>
+                </div>
+
+                {/* Step 5: Contacts CSV */}
+                <div className={createStep === 5 ? "block animate-step-in" : "hidden"}>
+                  <div className="grid gap-4">
+                    <div>
+                      <h3 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--foreground)]">Upload contacts CSV</h3>
+                      <p className="text-sm text-[var(--muted)] mt-1.5">Specify who the AI should call. Must contain headers: Name, Email, Company, Title.</p>
+                    </div>
+                    {contactsFileText ? (
+                      <div className="flex items-center justify-between gap-3 bg-emerald-50/50 border border-emerald-200/60 rounded-2xl p-5 transition mt-3">
+                        <div className="flex items-center gap-3 text-emerald-700 min-w-0">
+                          <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-sm font-bold truncate">{contactsFileText}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setContactsFileText("")}
+                          className="text-xs font-bold text-slate-400 hover:text-rose-600 transition"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="relative border-2 border-dashed border-slate-300 hover:border-[var(--accent)] rounded-2xl py-12 px-8 bg-slate-50/40 hover:bg-slate-50/80 transition-all flex flex-col items-center justify-center text-center cursor-pointer mt-3">
+                        <svg className="w-10 h-10 text-slate-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span className="text-sm font-bold text-slate-700">Upload Contacts CSV</span>
+                        <span className="text-xs text-slate-500 mt-1">Required · CSV format containing name, email, company, title</span>
+                        <input
+                          required={createStep === 5}
+                          type="file"
+                          name="contactsCsv"
+                          accept=".csv,text/csv"
+                          onChange={handleContactsChange}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </section>
 
-            <div className="fixed bottom-6 right-4 z-10 md:right-8">
-              <button
-                type="submit"
-                className="inline-flex h-12 min-w-32 items-center justify-center rounded-md bg-[var(--accent)] px-6 text-base font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
-              >
-                Next
-              </button>
+            {/* Stepper Navigation Buttons */}
+            <div className="mt-8 flex justify-between gap-4">
+              {createStep > 1 ? (
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 text-sm font-bold text-[var(--foreground)] hover:bg-slate-50 transition shadow-sm active:scale-95 cursor-pointer"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={goHome}
+                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 text-sm font-bold text-[var(--foreground)] hover:bg-slate-50 transition shadow-sm active:scale-95 cursor-pointer"
+                >
+                  Cancel
+                </button>
+              )}
+
+              {createStep < 5 ? (
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  className="inline-flex h-12 min-w-36 items-center justify-center rounded-2xl bg-[var(--accent)] hover:bg-[#0855a1] px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(10,102,194,0.18)] hover:shadow-[0_4px_24px_rgba(10,102,194,0.35)] transition-all duration-300 transform active:scale-95 ml-auto cursor-pointer"
+                >
+                  Next
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  className="inline-flex h-12 min-w-36 items-center justify-center rounded-2xl bg-[var(--accent)] hover:bg-[#0855a1] px-6 text-sm font-bold text-white shadow-[0_4px_14px_rgba(10,102,194,0.18)] hover:shadow-[0_4px_24px_rgba(10,102,194,0.35)] transition-all duration-300 transform active:scale-95 ml-auto cursor-pointer"
+                >
+                  Create
+                </button>
+              )}
             </div>
           </form>
         </div>
@@ -354,46 +540,52 @@ export default function Home() {
 
   if (view === "questions") {
     return (
-      <main className="min-h-screen px-4 py-6 md:px-8 md:py-8">
-        <div className="mx-auto max-w-5xl">
-          <PageHeader title="Questions" onHome={goHome} />
+      <main className="min-h-screen px-4 py-8 md:px-8 md:py-12">
+        <div className="mx-auto max-w-3xl">
+          <PageHeader title="Review Question Bank" onHome={goHome} />
 
-          <section className="mt-8 overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--panel)] shadow-sm">
-            <ul className="divide-y divide-[var(--line)]">
+          <p className="text-sm text-[var(--muted)] mt-2">
+            These questions were compiled from your goal. Edit them or add new questions before initiating the operator.
+          </p>
+
+          <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <ul className="divide-y divide-slate-100">
               {questions.map((question, index) => (
-                <li key={`question-${index}`} className="grid grid-cols-[1fr_3rem]">
+                <li key={`question-${index}`} className="grid grid-cols-[1fr_3.5rem] items-center group transition">
                   <textarea
                     value={question}
                     rows={2}
                     onChange={(event) => updateQuestion(index, event.target.value)}
-                    className="min-h-20 resize-y border-0 bg-transparent px-4 py-4 text-base leading-6 text-[var(--foreground)] outline-none transition focus:bg-[var(--accent-wash)] md:px-5"
+                    className="min-h-20 resize-y border-0 bg-transparent px-5 py-4.5 text-sm leading-relaxed text-[var(--foreground)] outline-none transition focus:bg-[var(--accent-wash)]/20"
                     aria-label={`Question ${index + 1}`}
                   />
                   <button
                     type="button"
                     onClick={() => removeQuestion(index)}
-                    className="flex min-h-20 items-center justify-center border-l border-[var(--line)] text-xl font-semibold text-[var(--muted)] transition hover:bg-[var(--status-wash)] hover:text-[var(--warn)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--warn)]"
+                    className="flex h-full items-center justify-center border-l border-slate-100 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition focus:outline-none"
                     aria-label={`Remove question ${index + 1}`}
                   >
-                    X
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
                   </button>
                 </li>
               ))}
             </ul>
           </section>
 
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6 flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
               onClick={addQuestion}
-              className="inline-flex h-11 items-center justify-center rounded-md border border-[var(--line)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--panel-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-[var(--foreground)] transition hover:bg-slate-50 active:scale-95"
             >
               Add question
             </button>
             <button
               type="button"
               onClick={startCampaign}
-              className="inline-flex h-11 items-center justify-center rounded-md bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-[var(--accent)] hover:bg-[#0855a1] px-6 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(10,102,194,0.15)] transition active:scale-95"
             >
               Start campaign
             </button>
@@ -405,45 +597,74 @@ export default function Home() {
 
   if (view === "success") {
     return (
-      <main className="min-h-screen px-4 py-6 md:px-8 md:py-8">
-        <div className="mx-auto max-w-5xl">
-          <PageHeader title="" onHome={goHome} />
-
-          <section className="flex min-h-[55vh] items-center justify-center">
-            <h1 className="text-center text-3xl font-semibold tracking-normal text-[var(--foreground)] md:text-5xl">
-              Campaign successfully started!
+      <main className="min-h-screen px-4 py-8 md:px-8 md:py-12 flex items-center justify-center">
+        <div className="mx-auto max-w-md w-full rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-md p-8 md:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.03)] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-100/30 rounded-full blur-xl pointer-events-none" />
+          <div className="flex flex-col items-center text-center">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-inner animate-pulse">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)] mb-2">
+              Campaign started!
             </h1>
-          </section>
+            <p className="text-xs text-[var(--muted)] mb-8 leading-relaxed">
+              Your AI research operator is now preparing personalized dossiers and scheduling discovery interviews.
+            </p>
+            <button
+              type="button"
+              onClick={goHome}
+              className="w-full inline-flex h-11 items-center justify-center rounded-xl bg-[var(--accent)] hover:bg-[#0855a1] px-6 text-sm font-semibold text-white shadow-sm transition active:scale-95"
+            >
+              Return to Dashboard
+            </button>
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen px-4 py-6 md:px-8 md:py-8">
+    <main className="min-h-screen px-4 py-8 md:px-8 md:py-12">
       <div className="mx-auto max-w-6xl">
-        <header className="flex items-center justify-between gap-4 border-b border-[var(--line)] pb-5">
-          <h1 className="text-3xl font-semibold tracking-normal text-[var(--foreground)] md:text-4xl">
-            Campaigns
-          </h1>
-          <button
-            type="button"
-            onClick={openCreateCampaign}
-            className="inline-flex h-10 items-center justify-center rounded-md bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
-          >
-            New
-          </button>
-        </header>
+        {/* Banner header */}
+        <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200/70 p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.015)] mb-8">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-100/40 to-transparent rounded-full blur-3xl pointer-events-none" />
+          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <span className="text-[9px] font-extrabold uppercase tracking-widest text-[var(--accent)] bg-[var(--accent-wash)] px-2.5 py-1 rounded-full border border-blue-100">
+                AI Operator Console
+              </span>
+              <h1 className="text-3xl font-extrabold tracking-tight text-[var(--foreground)] md:text-4xl mt-3">
+                Campaigns
+              </h1>
+              <p className="text-sm text-[var(--muted)] mt-1.5 max-w-xl">
+                Manage your autonomous research operators, configure discovery loops, and synthesize stakeholder reports.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={openCreateCampaign}
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-[var(--accent)] hover:bg-[#0855a1] px-5 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(10,102,194,0.15)] hover:shadow-[0_4px_20px_rgba(10,102,194,0.3)] transition-all duration-300 transform active:scale-95"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+              </svg>
+              New Campaign
+            </button>
+          </div>
+        </div>
 
-        <section className="mt-6 overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--panel)]">
-          <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-[var(--line)] bg-[var(--panel-strong)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)] md:grid-cols-[18rem_1fr_14rem_13rem] md:px-5">
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-md shadow-sm">
+          <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-slate-100 bg-slate-50/50 px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] md:grid-cols-[18rem_1fr_15rem_12rem]">
             <span>Name</span>
             <span className="hidden md:block">Goal</span>
             <span className="hidden md:block">Inputs</span>
             <span className="text-right">Status</span>
           </div>
 
-          <ul className="divide-y divide-[var(--line)]">
+          <ul className="divide-y divide-slate-100">
             {campaigns.map((campaign) => (
               <li key={campaign.id}>
                 <CampaignRow campaign={campaign} onOpen={openCampaign} />
@@ -458,9 +679,9 @@ export default function Home() {
 
 function PageHeader({ title, onHome }: { title: string; onHome: () => void }) {
   return (
-    <header className="flex min-h-14 items-center justify-between gap-4 border-b border-[var(--line)] pb-5">
+    <header className="flex min-h-14 items-center justify-between gap-4 border-b border-slate-200 pb-5">
       {title ? (
-        <h1 className="text-3xl font-semibold tracking-normal text-[var(--foreground)] md:text-4xl">
+        <h1 className="text-2xl font-extrabold tracking-tight text-[var(--foreground)] md:text-3xl">
           {title}
         </h1>
       ) : (
@@ -469,7 +690,7 @@ function PageHeader({ title, onHome }: { title: string; onHome: () => void }) {
       <button
         type="button"
         onClick={onHome}
-        className="inline-flex h-10 items-center justify-center rounded-md border border-[var(--line)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--panel-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+        className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:bg-slate-50 shadow-sm active:scale-95"
       >
         Home
       </button>

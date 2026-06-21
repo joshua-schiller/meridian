@@ -1,20 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f8fb;
-  --foreground: #18212f;
-  --muted: #657287;
+  --background: #f4f7fa;
+  --foreground: #0f172a;
+  --muted: #475569;
   --panel: #ffffff;
-  --panel-strong: #eef3f8;
-  --line: #d8e0ea;
-  --accent: #0f766e;
-  --accent-ink: #0b4544;
-  --accent-soft: #72c3b7;
-  --accent-wash: #e9f7f5;
-  --status-ink: #72411b;
-  --status-wash: #fff1db;
-  --warn: #a65325;
-  --blue: #275f9d;
+  --panel-strong: #f8fafc;
+  --line: #e2e8f0;
+  --accent: #0a66c2;
+  --accent-ink: #004182;
+  --accent-soft: #e0f2fe;
+  --accent-wash: #eff6ff;
+  --status-ink: #166534;
+  --status-wash: #dcfce7;
+  --warn: #b45309;
+  --blue: #0a66c2;
 }
 
 @theme inline {
@@ -35,15 +35,19 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    linear-gradient(180deg, #ffffff 0, var(--background) 18rem),
-    var(--background);
+  background-color: var(--background);
+  background-image: 
+    radial-gradient(#e2e8f0 1.5px, transparent 1.5px),
+    linear-gradient(180deg, #ffffff 0%, var(--background) 24rem);
+  background-size: 24px 24px, 100% 100%;
   color: var(--foreground);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  background: var(--accent-wash);
+  background: var(--accent-soft);
   color: var(--accent-ink);
 }
 
@@ -52,4 +56,54 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+/* Custom Scrollbars for premium dashboard feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Premium Card Hover Glows */
+.premium-card {
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.02), 0 2px 6px -1px rgba(15, 23, 42, 0.01);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-card:hover {
+  border-color: rgba(10, 102, 194, 0.2);
+  box-shadow: 0 12px 30px -4px rgba(10, 102, 194, 0.05), 0 4px 12px -2px rgba(10, 102, 194, 0.02);
+  transform: translateY(-2px);
+}
+
+/* Custom Stepper Slide-In Transition */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-step-in {
+  animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
