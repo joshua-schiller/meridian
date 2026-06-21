@@ -89,6 +89,24 @@ function evidenceForQuestion(
   );
 }
 
+// A curated set of Aura-2 American-English voices. Deepgram offers ~36 of
+// these (90 total across languages); keep this list in sync with VOICE_CHOICES
+// in apps/api/app/deepgram_voice.py. Hera first = the default.
+const VOICES: { id: string; label: string; desc: string }[] = [
+  { id: "aura-2-hera-en", label: "Hera", desc: "Smooth, warm, pro" },
+  { id: "aura-2-andromeda-en", label: "Andromeda", desc: "Casual, expressive" },
+  { id: "aura-2-thalia-en", label: "Thalia", desc: "Clear, confident" },
+  { id: "aura-2-cora-en", label: "Cora", desc: "Smooth, melodic" },
+  { id: "aura-2-helena-en", label: "Helena", desc: "Caring, natural" },
+  { id: "aura-2-luna-en", label: "Luna", desc: "Friendly, engaging" },
+  { id: "aura-2-athena-en", label: "Athena", desc: "Calm, professional" },
+  { id: "aura-2-juno-en", label: "Juno", desc: "Natural, melodic" },
+  { id: "aura-2-vesta-en", label: "Vesta", desc: "Expressive, patient" },
+  { id: "aura-2-cordelia-en", label: "Cordelia", desc: "Approachable, warm" },
+  { id: "aura-2-apollo-en", label: "Apollo", desc: "Confident male" },
+  { id: "aura-2-orion-en", label: "Orion", desc: "Approachable male" },
+];
+
 export default function VoiceSession() {
   const [status, setStatus] = useState<Status>("idle");
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -99,13 +117,20 @@ export default function VoiceSession() {
   const [adaptiveLoop, setAdaptiveLoop] = useState<AdaptiveLoopResponse | null>(null);
   const [reportUrl, setReportUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [selectedVoice, setSelectedVoice] = useState(VOICES[0].id);
+  const [sampling, setSampling] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
+  const sampleAudioRef = useRef<HTMLAudioElement | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const scriptedResponsesDone = scriptedIdx >= SCRIPTED_RESPONSES.length;
+  // Half-duplex gate: while the agent is speaking (or thinking), we stop
+  // sending mic audio so its own voice isn't transcribed back into the loop.
+  const agentBusyRef = useRef<boolean>(false);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const stopMic = useCallback(() => {
     processorRef.current?.disconnect();
@@ -126,13 +151,42 @@ export default function VoiceSession() {
     };
   }, [reportUrl]);
 
+  const playSample = useCallback((voiceId: string) => {
+    setSelectedVoice(voiceId);
+    sampleAudioRef.current?.pause();
+    setSampling(voiceId);
+    const audio = new Audio(`${API_HTTP_BASE}/voice/sample?model=${voiceId}`);
+    sampleAudioRef.current = audio;
+    const clear = () => setSampling((v) => (v === voiceId ? null : v));
+    audio.onended = clear;
+    audio.onerror = clear;
+    audio.play().catch(clear);
+  }, []);
+
   const playAudio = useCallback((base64Data: string) => {
+    // Serialize playback: stop anything currently playing so two responses
+    // can never overlap.
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
     const bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
     const blob = new Blob([bytes], { type: "audio/mpeg" });
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
-    audio.play().catch(console.error);
-    audio.onended = () => URL.revokeObjectURL(url);
+    currentAudioRef.current = audio;
+    agentBusyRef.current = true; // mute mic while the agent speaks
+    const release = () => {
+      URL.revokeObjectURL(url);
+      if (currentAudioRef.current === audio) currentAudioRef.current = null;
+      agentBusyRef.current = false; // reopen mic once the agent finishes
+    };
+    audio.onended = release;
+    audio.onerror = release;
+    audio.play().catch((err) => {
+      console.error(err);
+      release();
+    });
   }, []);
 
   const runPostInterviewPipeline = useCallback(async (transcript: Transcript) => {
@@ -195,6 +249,9 @@ export default function VoiceSession() {
           playAudio(msg.data);
           break;
         case "transcript_final":
+          // User finished a turn — mute the mic until the agent has replied,
+          // so the gap while Claude is thinking doesn't capture stray audio.
+          agentBusyRef.current = true;
           setTurns((t) => [
             ...t,
             { id: msg.turn_id, speaker: "interviewee", text: msg.text },
@@ -207,6 +264,8 @@ export default function VoiceSession() {
           break;
         case "error":
         case "tts_error":
+          // If TTS failed there's no audio to end, so reopen the mic here.
+          agentBusyRef.current = false;
           setErrorMsg(msg.message);
           break;
       }
@@ -225,6 +284,8 @@ export default function VoiceSession() {
       setReportStatus("idle");
       setReportUrl(null);
       setErrorMsg("");
+      // Agent speaks the opening first, so start muted until it finishes.
+      agentBusyRef.current = true;
 
       // Acquire the mic BEFORE opening the socket so we can fail cleanly.
       let stream: MediaStream | null = null;
@@ -241,7 +302,7 @@ export default function VoiceSession() {
       }
 
       const ws = new WebSocket(
-        `${API_WS_BASE}/voice/session?contact=maya_chen&scripted=${scripted}`,
+        `${API_WS_BASE}/voice/session?contact=maya_chen&scripted=${scripted}&voice=${selectedVoice}`,
       );
       ws.binaryType = "arraybuffer";
       wsRef.current = ws;
@@ -262,9 +323,15 @@ export default function VoiceSession() {
             if (wsRef.current?.readyState !== WebSocket.OPEN) return;
             const input = e.inputBuffer.getChannelData(0);
             const pcm16 = new Int16Array(input.length);
-            for (let i = 0; i < input.length; i++) {
-              const s = Math.max(-1, Math.min(1, input[i]));
-              pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+            // Half-duplex: while the agent is speaking/thinking we send SILENCE
+            // (zeros) rather than the real mic. This keeps Deepgram's stream
+            // alive (it times out with no audio) while not feeding it the
+            // agent's own voice echoing back through the speakers.
+            if (!agentBusyRef.current) {
+              for (let i = 0; i < input.length; i++) {
+                const s = Math.max(-1, Math.min(1, input[i]));
+                pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+              }
             }
             wsRef.current.send(pcm16.buffer);
           };
@@ -283,7 +350,7 @@ export default function VoiceSession() {
       };
       ws.onclose = () => stopMic();
     },
-    [handleMessage, stopMic],
+    [handleMessage, stopMic, selectedVoice],
   );
 
   const injectScriptedResponse = useCallback(() => {
@@ -316,19 +383,60 @@ export default function VoiceSession() {
     <div className="flex flex-col gap-4">
       {/* Controls */}
       {status === "idle" && (
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => connect(true)}
-            className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
-          >
-            Run scripted fallback
-          </button>
-          <button
-            onClick={() => connect(false)}
-            className="rounded-md border border-[var(--line)] px-4 py-2 text-sm font-semibold hover:bg-[var(--panel-strong)]"
-          >
-            Start Live (microphone)
-          </button>
+        <div className="flex flex-col gap-4">
+          {/* Voice picker — click a voice to hear a sample; the selected one
+              is used for the interview. */}
+          <div className="rounded-lg border border-[var(--line)] p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+              Interviewer voice · click to preview
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {VOICES.map((v) => {
+                const active = selectedVoice === v.id;
+                return (
+                  <button
+                    key={v.id}
+                    onClick={() => playSample(v.id)}
+                    className={`flex items-center gap-2 rounded-md border px-3 py-2 text-left transition ${
+                      active
+                        ? "border-[var(--accent)] bg-[var(--panel-strong)]"
+                        : "border-[var(--line)] hover:bg-[var(--panel-strong)]"
+                    }`}
+                  >
+                    <span className="text-base leading-none">
+                      {sampling === v.id ? "🔊" : "▶"}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold">
+                        {v.label}
+                        {active ? (
+                          <span className="ml-1 text-[var(--accent)]">✓</span>
+                        ) : null}
+                      </span>
+                      <span className="block truncate text-xs text-[var(--muted)]">
+                        {v.desc}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => connect(true)}
+              className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+            >
+              Run scripted fallback
+            </button>
+            <button
+              onClick={() => connect(false)}
+              className="rounded-md border border-[var(--line)] px-4 py-2 text-sm font-semibold hover:bg-[var(--panel-strong)]"
+            >
+              Start Live (microphone)
+            </button>
+          </div>
         </div>
       )}
 
