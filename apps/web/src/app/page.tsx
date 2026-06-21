@@ -1,6 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { type FormEvent, useState } from "react";
+
+import { campaigns as campaignFixtures } from "@/lib/campaigns";
 
 type View = "home" | "create" | "questions" | "success";
 
@@ -14,6 +17,7 @@ type Campaign = {
   supportingDocumentNames?: string[];
   additionalContext?: string;
   questionCount: number;
+  detailHref?: string;
 };
 
 type CampaignDraft = {
@@ -25,38 +29,17 @@ type CampaignDraft = {
   contactCount: number;
 };
 
-const initialCampaigns: Campaign[] = [
-  {
-    id: "startup-pm-discovery",
-    name: "Startup PM discovery research",
-    goal: "Understand why early-stage PMs struggle to keep discovery learning alive between calls.",
-    completedInterviews: 1,
-    totalInterviews: 3,
-    contactsFileName: "startup-pms.csv",
-    supportingDocumentNames: ["research-brief.pdf"],
-    questionCount: 7,
-  },
-  {
-    id: "ai-support-handoff",
-    name: "AI support handoff study",
-    goal: "Learn where operators trust an AI teammate to resolve customer escalations.",
-    completedInterviews: 2,
-    totalInterviews: 5,
-    contactsFileName: "support-operators.csv",
-    supportingDocumentNames: ["handoff-notes.md", "call-summary.pdf"],
-    questionCount: 8,
-  },
-  {
-    id: "report-readiness",
-    name: "Stakeholder report readiness",
-    goal: "Validate what makes an interview synthesis credible enough to share with leadership.",
-    completedInterviews: 0,
-    totalInterviews: 4,
-    contactsFileName: "product-leaders.csv",
-    supportingDocumentNames: [],
-    questionCount: 6,
-  },
-];
+const initialCampaigns: Campaign[] = campaignFixtures.map((campaign) => ({
+  id: campaign.id,
+  name: campaign.title,
+  goal: campaign.oneLineGoal,
+  completedInterviews: campaign.completedInterviews,
+  totalInterviews: campaign.totalInterviews,
+  contactsFileName: campaign.contactsFileName,
+  supportingDocumentNames: campaign.supportingDocumentNames,
+  questionCount: campaign.questionCount,
+  detailHref: `/campaigns/${campaign.id}`,
+}));
 
 const emptyDraft = (): CampaignDraft => ({
   name: "",
@@ -112,6 +95,62 @@ async function countCsvContacts(file: File) {
 
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function CampaignRowContent({ campaign }: { campaign: Campaign }) {
+  return (
+    <>
+      <div className="min-w-0">
+        <h2 className="truncate text-base font-semibold text-[var(--foreground)]">
+          {campaign.name}
+        </h2>
+        {campaign.contactsFileName ? (
+          <p className="mt-1 truncate font-mono text-xs text-[var(--muted)] md:hidden">
+            {campaign.contactsFileName}
+          </p>
+        ) : null}
+      </div>
+      <p className="min-w-0 text-sm leading-6 text-[var(--muted)] md:truncate">
+        {campaign.goal}
+      </p>
+      <div className="flex flex-wrap gap-2 text-xs font-semibold text-[var(--accent-ink)]">
+        <span className="rounded bg-[var(--accent-wash)] px-2 py-1">
+          {campaign.totalInterviews} contacts
+        </span>
+        <span className="rounded bg-[var(--panel-strong)] px-2 py-1">
+          {campaign.supportingDocumentNames?.length ?? 0} docs
+        </span>
+        <span className="rounded bg-[var(--panel-strong)] px-2 py-1">
+          {campaign.questionCount} questions
+        </span>
+      </div>
+      <p className="font-mono text-sm font-semibold text-[var(--accent-ink)] md:text-right">
+        {campaign.completedInterviews}/{campaign.totalInterviews} interviews completed
+      </p>
+    </>
+  );
+}
+
+function CampaignRow({ campaign }: { campaign: Campaign }) {
+  const rowClassName =
+    "grid gap-3 px-4 py-4 transition md:grid-cols-[18rem_1fr_14rem_13rem] md:items-center md:gap-4 md:px-5";
+
+  if (campaign.detailHref) {
+    return (
+      <Link
+        href={campaign.detailHref}
+        className={`${rowClassName} hover:bg-[var(--accent-wash)] focus:bg-[var(--accent-wash)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--accent)]`}
+      >
+        <CampaignRowContent campaign={campaign} />
+      </Link>
+    );
+  }
+
+  return (
+    <div className={rowClassName}>
+      <CampaignRowContent campaign={campaign} />
+    </div>
+  );
 }
 
 export default function Home() {
@@ -383,37 +422,8 @@ export default function Home() {
 
           <ul className="divide-y divide-[var(--line)]">
             {campaigns.map((campaign) => (
-              <li
-                key={campaign.id}
-                className="grid gap-3 px-4 py-4 transition hover:bg-[var(--accent-wash)] md:grid-cols-[18rem_1fr_14rem_13rem] md:items-center md:gap-4 md:px-5"
-              >
-                <div className="min-w-0">
-                  <h2 className="truncate text-base font-semibold text-[var(--foreground)]">
-                    {campaign.name}
-                  </h2>
-                  {campaign.contactsFileName ? (
-                    <p className="mt-1 truncate font-mono text-xs text-[var(--muted)] md:hidden">
-                      {campaign.contactsFileName}
-                    </p>
-                  ) : null}
-                </div>
-                <p className="min-w-0 text-sm leading-6 text-[var(--muted)] md:truncate">
-                  {campaign.goal}
-                </p>
-                <div className="flex flex-wrap gap-2 text-xs font-semibold text-[var(--accent-ink)]">
-                  <span className="rounded bg-[var(--accent-wash)] px-2 py-1">
-                    {campaign.totalInterviews} contacts
-                  </span>
-                  <span className="rounded bg-[var(--panel-strong)] px-2 py-1">
-                    {campaign.supportingDocumentNames?.length ?? 0} docs
-                  </span>
-                  <span className="rounded bg-[var(--panel-strong)] px-2 py-1">
-                    {campaign.questionCount} questions
-                  </span>
-                </div>
-                <p className="font-mono text-sm font-semibold text-[var(--accent-ink)] md:text-right">
-                  {campaign.completedInterviews}/{campaign.totalInterviews} interviews completed
-                </p>
+              <li key={campaign.id}>
+                <CampaignRow campaign={campaign} />
               </li>
             ))}
           </ul>
