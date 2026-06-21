@@ -11,7 +11,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
-from .models import Contact, Dossier, Finding, LoopResult, QuestionBank
+from .models import Contact, Contradiction, Dossier, Finding, LivingInsightDocument, LoopResult, QuestionBank
 
 
 @dataclass(frozen=True)
@@ -28,6 +28,8 @@ class StakeholderReport:
     executive_summary: list[str]
     key_findings: list[ReportFinding]
     evidence: list[str]
+    contradictions: list[str]
+    recommended_next_steps: list[str]
     next_interview_plan: QuestionBank
     open_questions: list[str]
     methodology: list[str]
@@ -46,18 +48,8 @@ def build_stakeholder_report(
         for theme in loop_result.updated_insight_doc.themes
         for finding in theme.findings
     ]
-    evidence_quotes = [
-        f'"{item.quote}" - {item.interviewee}. Takeaway: {item.takeaway}'
-        for item in loop_result.evidence[:5]
-    ]
-    if not evidence_quotes:
-        evidence_quotes = [
-            f'"{quote.quote}" - {quote.interviewee}.'
-            for item in key_findings
-            for quote in item.finding.supporting_quotes[:1]
-        ][:5]
-
     next_plan = loop_result.next_question_bank
+    evidence_quotes = evidence_lines(loop_result.evidence, key_findings, limit=6)
     company_context = ""
     if contact is not None:
         company_context = f" with {contact.name}, {contact.role} at {contact.company}"
@@ -85,26 +77,29 @@ def build_stakeholder_report(
             ),
             (
                 "The strongest signal is that discovery calls are not the main bottleneck; "
-                "turning each call into sharper follow-up research is."
+                "turning each call into sharper follow-up research before the team moves on is."
             ),
             (
                 "The next interview should focus on synthesis behavior, scattered context, "
-                "and what evidence makes an AI-led interview plan trustworthy."
+                "and what evidence makes an AI-led interview plan trustworthy enough to approve."
             )
             + baseline_note
             + dossier_note,
         ],
         key_findings=key_findings,
         evidence=evidence_quotes,
+        contradictions=contradiction_lines(loop_result.updated_insight_doc),
+        recommended_next_steps=recommended_steps(loop_result.updated_insight_doc),
         next_interview_plan=next_plan,
         open_questions=loop_result.updated_insight_doc.open_questions,
         methodology=[
             f"Transcript seam: {transcript.id} ({transcript.source}).",
-            "Synthesis output: updated living insight document with findings, confidence, and evidence.",
+            "Synthesis output: updated living insight document with findings, confidence, quotes, and unresolved questions.",
             (
                 "Adaptive output: next question bank treated as the AI interviewer's plan "
                 f"for Interview {next_plan.interview_number}."
             ),
+            "Report output: stakeholder PDF generated from the same LoopResult used by the demo UI.",
         ],
     )
 
@@ -125,17 +120,11 @@ def build_sequence_report(
         for theme in final_doc.themes
         for finding in theme.findings
     ]
-    evidence_quotes = [
-        f'"{item.quote}" - {item.interviewee}. Takeaway: {item.takeaway}'
-        for result in loop_results
-        for item in result.evidence
-    ][:8]
-    if not evidence_quotes:
-        evidence_quotes = [
-            f'"{quote.quote}" - {quote.interviewee}.'
-            for item in key_findings
-            for quote in item.finding.supporting_quotes[:2]
-        ][:8]
+    evidence_quotes = evidence_lines(
+        [item for result in loop_results for item in result.evidence],
+        key_findings,
+        limit=10,
+    )
 
     confirmed_findings = sum(
         1 for item in key_findings if item.finding.status == "confirmed"
@@ -189,6 +178,8 @@ def build_sequence_report(
         ],
         key_findings=key_findings,
         evidence=evidence_quotes,
+        contradictions=contradiction_lines(final_doc),
+        recommended_next_steps=recommended_steps(final_doc),
         next_interview_plan=final_result.next_question_bank,
         open_questions=final_doc.open_questions,
         methodology=[
@@ -198,6 +189,91 @@ def build_sequence_report(
             "The question bank is Meridian's next AI interview plan, not a human interview guide.",
         ],
     )
+
+
+def evidence_lines(evidence: list, key_findings: list[ReportFinding], *, limit: int) -> list[str]:
+    lines = [
+        f'"{item.quote}" - {item.interviewee}. Takeaway: {item.takeaway}'
+        for item in evidence[:limit]
+    ]
+    if lines:
+        return lines
+
+    return [
+        f'"{quote.quote}" - {quote.interviewee}.'
+        for item in key_findings
+        for quote in item.finding.supporting_quotes[:2]
+    ][:limit]
+
+
+def contradiction_lines(insight_doc: LivingInsightDocument) -> list[str]:
+    if not insight_doc.contradictions:
+        if doc_mentions(insight_doc, "24-hour") or doc_mentions(insight_doc, "decision memo"):
+            return [
+                (
+                    "No disagreement on the core bottleneck; the main nuance is cadence. "
+                    "Ava indicates executives need a fast decision memo within 24 hours, "
+                    "then the fuller PDF once patterns are confirmed across interviews."
+                )
+            ]
+        return [
+            "No direct contradiction yet; current evidence mostly reinforces the same discovery loop bottleneck."
+        ]
+
+    return [format_contradiction(item) for item in insight_doc.contradictions]
+
+
+def format_contradiction(contradiction: Contradiction) -> str:
+    people = ", ".join(contradiction.between)
+    return f"{people}: {contradiction.description}"
+
+
+def recommended_steps(insight_doc: LivingInsightDocument) -> list[str]:
+    finding_ids = {
+        finding.id
+        for theme in insight_doc.themes
+        for finding in theme.findings
+    }
+    steps = [
+        "Keep the transcript as the product seam so live Deepgram calls and fallback transcripts feed the same synthesis path.",
+        "Make every generated question show the finding, quote, or confidence change that caused Meridian to ask it.",
+        "Use Redis-backed living insight state during the demo to show miss, persist, retrieve, and cross-interview confirmation.",
+    ]
+    report_needs_decision_support = (
+        "report_needs_decision_support" in finding_ids
+        or doc_mentions(insight_doc, "executive")
+        or doc_mentions(insight_doc, "stakeholder")
+    )
+    report_cadence_nuance = (
+        "decision_memo_cadence" in finding_ids
+        or doc_mentions(insight_doc, "24-hour")
+        or doc_mentions(insight_doc, "decision memo")
+    )
+    if report_needs_decision_support:
+        steps.append(
+            "Shape the PDF around decisions: executive summary first, findings by confidence, representative quotes, and open questions."
+        )
+    if insight_doc.contradictions or report_cadence_nuance:
+        steps.append(
+            "Test the reporting cadence: a fast decision memo after each call, then the full stakeholder PDF after multiple interviews."
+        )
+    return steps
+
+
+def doc_mentions(insight_doc: LivingInsightDocument, phrase: str) -> bool:
+    needle = phrase.lower()
+    haystack = " ".join(
+        [
+            *insight_doc.open_questions,
+            *[theme.label for theme in insight_doc.themes],
+            *[
+                finding.text
+                for theme in insight_doc.themes
+                for finding in theme.findings
+            ],
+        ]
+    ).lower()
+    return needle in haystack
 
 
 def report_to_markdown(report: StakeholderReport) -> str:
@@ -222,6 +298,12 @@ def report_to_markdown(report: StakeholderReport) -> str:
 
     lines.extend(["", "## Evidence Quotes"])
     lines.extend(f"- {quote}" for quote in report.evidence)
+
+    lines.extend(["", "## Contradictions & Nuance"])
+    lines.extend(f"- {item}" for item in report.contradictions)
+
+    lines.extend(["", "## Recommended Next Steps"])
+    lines.extend(f"- {item}" for item in report.recommended_next_steps)
 
     lines.extend(["", "## Next AI Interview Plan"])
     lines.append(report.next_interview_plan.personalized_opening)
@@ -278,6 +360,14 @@ def render_report_pdf(report: StakeholderReport) -> bytes:
     story.append(section_heading("Evidence Quotes", styles))
     for quote in report.evidence[:5]:
         story.append(bullet_paragraph(quote, styles))
+
+    story.append(section_heading("Contradictions & Nuance", styles))
+    for item in report.contradictions[:5]:
+        story.append(bullet_paragraph(item, styles))
+
+    story.append(section_heading("Recommended Next Steps", styles))
+    for item in report.recommended_next_steps[:6]:
+        story.append(bullet_paragraph(item, styles))
 
     story.append(section_heading("Next AI Interview Plan", styles))
     story.append(body_paragraph(report.next_interview_plan.personalized_opening, styles))

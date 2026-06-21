@@ -55,16 +55,28 @@ REDIS_USE_JSON=0
 9. Show Redis state if configured:
 
 ```bash
+curl -X POST "http://localhost:8001/demo/reset?session_id=stage-sequence"
+curl -X POST "http://localhost:8001/demo/run-sequence?mode=claude&session_id=stage-sequence"
 curl "http://localhost:8001/demo/state"
+curl "http://localhost:8001/research/sessions/stage-sequence"
 ```
 
 Talk track: "The transcript is the seam. Meridian just used the interview transcript, retrieved prior insight memory from Redis, synthesized with Claude, saved the updated living insight doc back to Redis, generated the next AI interview plan, and rendered the PDF from that same result."
+
+Redis proof points to show in the JSON:
+
+- `memory.read.status`: first loop should be `miss`; later loops should be `hit`.
+- `memory.write.status`: each loop should be `persisted`.
+- `memory.write.vector_status`: should be `vectorset_indexed` when Redis Vector Sets are available.
+- `memory.read.vector_status`: should be `vectorset_hit` on later loops when vector retrieval is active.
+- `vector_state.items`: number of per-finding vectors stored for the session.
 
 ## Accumulated Sequence Path
 
 Use this path when you need to show the whole adaptive loop quickly, or when Bilguun's UI is pointed at the API sequence endpoint:
 
 ```bash
+curl -X POST "http://localhost:8001/demo/reset?session_id=stage-sequence"
 curl -X POST "http://localhost:8001/demo/run-sequence?mode=deterministic&session_id=stage-sequence"
 curl -X POST -o artifacts/sequence_report.pdf \
   "http://localhost:8001/demo/run-sequence/report.pdf?mode=deterministic&session_id=stage-sequence-pdf"
@@ -74,10 +86,11 @@ What this proves:
 
 - Meridian conducts Interview 1 from Maya's transcript and generates Noah's personalized Interview 2 plan.
 - The living insight document is persisted, then retrieved before Noah's transcript runs.
-- Repeated findings become confirmed/high confidence when both Maya and Noah support them.
-- The final report is generated after two Meridian-conducted interviews and includes the Interview 3 AI plan.
+- Meridian then runs Ava's Interview 3 fixture, adding report-cadence nuance about a fast decision memo versus the final PDF.
+- Repeated findings become confirmed/high confidence when multiple interviewees support them.
+- The final report is generated after three Meridian-conducted interviews and includes the Interview 4 AI plan.
 
-Frontend contract: `POST /demo/run-sequence` returns `loops[0]` for Interview 1 -> Interview 2, `loops[1]` for Interview 2 -> Interview 3, `report_markdown`, `memory_state`, and sequence metrics. The money shot should compare `loops[0].question_bank_before`, `loops[0].question_bank_after`, and `loops[1].question_bank_after`.
+Frontend contract: `POST /demo/run-sequence` returns `loops[0]` for Interview 1 -> Interview 2, `loops[1]` for Interview 2 -> Interview 3, `loops[2]` for Interview 3 -> Interview 4, `report_markdown`, `memory_state`, and sequence metrics. The money shot should compare `loops[0].question_bank_before`, `loops[0].question_bank_after`, and `loops[1].question_bank_after`; use `loops[2]` when there is time to show the accumulated-report story.
 
 ## Fallback Path
 

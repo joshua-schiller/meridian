@@ -412,6 +412,31 @@ def research_session_state(session_id: str) -> dict[str, Any]:
     return get_memory_store().snapshot(session_id=session_id)
 
 
+@app.delete("/research/sessions/{session_id}")
+def research_session_reset(session_id: str) -> dict[str, Any]:
+    store = get_memory_store()
+    reset = store.reset(session_id=session_id)
+    return {
+        "session_id": session_id,
+        "reset": reset.to_payload(),
+        "state": store.snapshot(session_id=session_id),
+    }
+
+
+@app.post("/demo/reset")
+def demo_reset(session_id: str | None = None) -> dict[str, Any]:
+    _, _, transcripts, _, _ = load_demo_sequence_inputs(FIXTURES_DIR)
+    base_session_id = session_id_for_goal(transcripts[0].research_goal)
+    session_ids = [session_id] if session_id else [base_session_id, f"{base_session_id}-sequence"]
+    store = get_memory_store()
+    resets = [store.reset(session_id=item).to_payload() for item in session_ids]
+    return {
+        "session_ids": session_ids,
+        "resets": resets,
+        "states": {item: store.snapshot(session_id=item) for item in session_ids},
+    }
+
+
 def build_demo_sequence_payload(
     *,
     mode: LoopMode,
@@ -424,48 +449,42 @@ def build_demo_sequence_payload(
     store = get_memory_store()
     sequence_session_id = session_id or f"{session_id_for_goal(transcripts[0].research_goal)}-sequence"
 
-    first_read = store.retrieve(
-        session_id=sequence_session_id,
-        research_goal=transcripts[0].research_goal,
-    )
-    first_payload = loop_payload(
-        transcript=transcripts[0],
-        prior_insight_doc=first_read.insight_doc or initial_doc,
-        baseline_question_bank=baseline_bank,
-        contact=contacts[0],
-        dossier=dossiers[0],
-        mode=mode,
-        session_id=sequence_session_id,
-        memory_read=first_read,
-        memory_store=store,
-        persist_memory=persist_memory,
-        next_interviewee_id=contacts[1].id,
-        next_contact=contacts[1],
-        next_dossier=dossiers[1],
-    )
-    first_result = LoopResult.model_validate(first_payload["loop_result"])
-    first_next_bank = QuestionBank.model_validate(first_payload["question_bank_after"])
+    loop_payloads: list[dict[str, Any]] = []
+    loop_results: list[LoopResult] = []
+    prior_doc = initial_doc
+    current_baseline_bank = baseline_bank
+    for index, transcript in enumerate(transcripts):
+        next_contact = contacts[index + 1] if index + 1 < len(contacts) else None
+        next_dossier = dossiers[index + 1] if index + 1 < len(dossiers) else None
+        next_interviewee_id = next_contact.id if next_contact else f"pm_{transcript.interview_number + 1:03d}_pending"
+        memory_read = store.retrieve(
+            session_id=sequence_session_id,
+            research_goal=transcript.research_goal,
+        )
+        payload = loop_payload(
+            transcript=transcript,
+            prior_insight_doc=memory_read.insight_doc or prior_doc,
+            baseline_question_bank=current_baseline_bank,
+            contact=contacts[index],
+            dossier=dossiers[index],
+            mode=mode,
+            session_id=sequence_session_id,
+            memory_read=memory_read,
+            memory_store=store,
+            persist_memory=persist_memory,
+            next_interviewee_id=next_interviewee_id,
+            next_contact=next_contact,
+            next_dossier=next_dossier,
+        )
+        result = LoopResult.model_validate(payload["loop_result"])
+        loop_payloads.append(payload)
+        loop_results.append(result)
+        prior_doc = result.updated_insight_doc
+        current_baseline_bank = QuestionBank.model_validate(payload["question_bank_after"])
 
-    second_read = store.retrieve(
-        session_id=sequence_session_id,
-        research_goal=transcripts[1].research_goal,
-    )
-    second_payload = loop_payload(
-        transcript=transcripts[1],
-        prior_insight_doc=second_read.insight_doc or first_result.updated_insight_doc,
-        baseline_question_bank=first_next_bank,
-        contact=contacts[1],
-        dossier=dossiers[1],
-        mode=mode,
-        session_id=sequence_session_id,
-        memory_read=second_read,
-        memory_store=store,
-        persist_memory=persist_memory,
-        next_interviewee_id="pm_003_pending",
-    )
-    second_result = LoopResult.model_validate(second_payload["loop_result"])
+    final_result = loop_results[-1]
     report = build_sequence_report(
-        loop_results=[first_result, second_result],
+        loop_results=loop_results,
         contacts=contacts,
         baseline_question_bank=baseline_bank,
     )
@@ -473,31 +492,35 @@ def build_demo_sequence_payload(
     return {
         "session_id": sequence_session_id,
         "contacts": [contact.model_dump(mode="json") for contact in contacts],
-        "loops": [first_payload, second_payload],
+        "loops": loop_payloads,
         "report_markdown": report_to_markdown(report),
         "memory_state": store.snapshot(session_id=sequence_session_id),
         "metrics": {
-            "interviews_run": 2,
+            "interviews_run": len(loop_results),
             "final_findings": sum(
-                len(theme.findings) for theme in second_result.updated_insight_doc.themes
+                len(theme.findings) for theme in final_result.updated_insight_doc.themes
             ),
             "confirmed_findings": sum(
                 1
-                for theme in second_result.updated_insight_doc.themes
+                for theme in final_result.updated_insight_doc.themes
                 for finding in theme.findings
                 if finding.status == "confirmed"
             ),
+            "nuanced_findings": sum(
+                1
+                for theme in final_result.updated_insight_doc.themes
+                for finding in theme.findings
+                if finding.status == "nuanced"
+            ),
+            "contradictions": len(final_result.updated_insight_doc.contradictions),
             "memory_read_statuses": [
-                first_payload["memory"]["read"]["status"],
-                second_payload["memory"]["read"]["status"],
+                payload["memory"]["read"]["status"] for payload in loop_payloads
             ],
             "memory_write_statuses": [
-                first_payload["memory"]["write"]["status"],
-                second_payload["memory"]["write"]["status"],
+                payload["memory"]["write"]["status"] for payload in loop_payloads
             ],
             "retrieved_context_items": [
-                first_payload["metrics"]["retrieved_context_items"],
-                second_payload["metrics"]["retrieved_context_items"],
+                payload["metrics"]["retrieved_context_items"] for payload in loop_payloads
             ],
         },
     }

@@ -1,0 +1,58 @@
+{
+  "id": "transcript_interview_003",
+  "research_goal": "Understand why PMs at early-stage startups struggle with discovery research.",
+  "interview_number": 3,
+  "interviewee_id": "pm_003",
+  "source": "fixture",
+  "turns": [
+    {
+      "id": "turn_001",
+      "speaker": "agent",
+      "timestamp_seconds": 0,
+      "text": "Ava, the first two interviews pointed to synthesis ownership and evidence trust as the loop breakers. Recently you changed a launch priority after a support escalation revealed a larger workflow issue. What has to happen between one customer call and the next roadmap conversation for research to actually change direction?"
+    },
+    {
+      "id": "turn_002",
+      "speaker": "interviewee",
+      "timestamp_seconds": 24,
+      "text": "The hard part is not getting calls. We can get customers on the phone, but the decision is often already made by the time the synthesis shows up. If the first call surfaces something important, the next interview plan has to change within a day, not a week."
+    },
+    {
+      "id": "turn_003",
+      "speaker": "agent",
+      "timestamp_seconds": 57,
+      "text": "When the plan does not change that quickly, what breaks?"
+    },
+    {
+      "id": "turn_004",
+      "speaker": "interviewee",
+      "timestamp_seconds": 78,
+      "text": "We keep asking broad questions for too long because nobody owns updating the plan. Context is scattered across support tickets, product docs, and a few CRM notes, so every PM recreates the picture from scratch."
+    },
+    {
+      "id": "turn_005",
+      "speaker": "agent",
+      "timestamp_seconds": 112,
+      "text": "What would make you trust an AI-generated next plan?"
+    },
+    {
+      "id": "turn_006",
+      "speaker": "interviewee",
+      "timestamp_seconds": 134,
+      "text": "Show me what changed, why it changed, and what evidence it came from. I would want direct quotes, a confidence label, and a note about whether this confirmed or challenged what we heard before."
+    },
+    {
+      "id": "turn_007",
+      "speaker": "agent",
+      "timestamp_seconds": 166,
+      "text": "What should Meridian generate for executives after these calls?"
+    },
+    {
+      "id": "turn_008",
+      "speaker": "interviewee",
+      "timestamp_seconds": 190,
+      "text": "Executives need the pattern, the confidence level, and a few quotes, but they do not need a full PDF after every single call. We need a 24-hour decision memo first, then the full report once multiple interviews show whether the pattern holds."
+    }
+  ],
+  "summary": "Ava confirms the synthesis bottleneck and scattered-context problem, then adds timing nuance: executives need a fast decision memo after each interview and the full PDF after patterns are confirmed across multiple interviews."
+}
