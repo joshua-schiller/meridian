@@ -109,26 +109,7 @@ function CampaignRowContent({ campaign }: { campaign: Campaign }) {
       <p className="min-w-0 text-sm leading-relaxed text-[var(--muted)] md:truncate">
         {campaign.goal}
       </p>
-      <div className="flex flex-wrap gap-2 text-[11px] font-bold">
-        <span className="inline-flex items-center rounded-lg bg-[var(--accent-wash)] px-2.5 py-1 text-[var(--accent)] border border-blue-100">
-          <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          {campaign.totalInterviews} contacts
-        </span>
-        <span className="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 text-slate-600 border border-slate-200">
-          <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          {campaign.supportingDocumentNames?.length ?? 0} docs
-        </span>
-        <span className="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 text-slate-600 border border-slate-200">
-          <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          {campaign.questionCount} questions
-        </span>
-      </div>
+
       <div className="flex flex-col gap-1.5 items-end justify-center">
         <p className={`font-mono text-xs font-extrabold px-2 py-0.5 rounded-full border ${isCompleted ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-[var(--accent-wash)] text-[var(--accent)] border-blue-100"}`}>
           {campaign.completedInterviews}/{campaign.totalInterviews} completed
@@ -146,7 +127,7 @@ function CampaignRowContent({ campaign }: { campaign: Campaign }) {
 
 function CampaignRow({ campaign, onOpen }: { campaign: Campaign; onOpen: (href: string) => void }) {
   const rowClassName =
-    "grid w-full gap-3 px-6 py-5 transition-all duration-200 md:grid-cols-[18rem_1fr_15rem_12rem] md:items-center md:gap-6 border-b border-slate-100 last:border-0 group";
+    "grid w-full gap-3 px-6 py-5 transition-all duration-200 md:grid-cols-[18rem_1fr_12rem] md:items-center md:gap-6 border-b border-slate-100 last:border-0 group";
   const isLinkedCampaign = Boolean(campaign.detailHref);
 
   function openCampaign() {
@@ -717,10 +698,9 @@ export default function Home() {
         </div>
 
         <section className="overflow-hidden rounded-none border border-slate-200 bg-white/95 backdrop-blur-md shadow-sm">
-          <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-slate-100 bg-slate-50/50 px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] md:grid-cols-[18rem_1fr_15rem_12rem]">
+          <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-slate-100 bg-slate-50/50 px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] md:grid-cols-[18rem_1fr_12rem]">
             <span>Name</span>
             <span className="hidden md:block">Goal</span>
-            <span className="hidden md:block">Inputs</span>
             <span className="text-right">Status</span>
           </div>
 
