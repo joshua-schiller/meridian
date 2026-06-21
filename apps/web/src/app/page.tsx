@@ -3,11 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, type KeyboardEvent, useState } from "react";
 
-import {
-  campaigns as campaignFixtures,
-  type CampaignInterview,
-  type CampaignReport,
-} from "@/lib/campaigns";
+import { campaigns as campaignFixtures } from "@/lib/campaigns";
 
 type View = "home" | "create" | "questions" | "success";
 
@@ -22,9 +18,6 @@ type Campaign = {
   additionalContext?: string;
   questionCount: number;
   detailHref?: string;
-  highLevelFindings?: string;
-  interviews?: CampaignInterview[];
-  report?: CampaignReport;
 };
 
 type CampaignDraft = {
@@ -46,9 +39,6 @@ const initialCampaigns: Campaign[] = campaignFixtures.map((campaign) => ({
   supportingDocumentNames: campaign.supportingDocumentNames,
   questionCount: campaign.questionCount,
   detailHref: `/campaigns/${campaign.id}`,
-  highLevelFindings: campaign.highLevelFindings,
-  interviews: campaign.interviews,
-  report: campaign.report,
 }));
 
 const emptyDraft = (): CampaignDraft => ({
@@ -107,164 +97,44 @@ function scrollToTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function pluralize(count: number, singular: string, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
-
-function getCompletionPercent(campaign: Campaign) {
-  if (campaign.totalInterviews <= 0) {
-    return 0;
-  }
-
-  return Math.min(
-    100,
-    Math.round((campaign.completedInterviews / campaign.totalInterviews) * 100),
-  );
-}
-
-function getReportReadiness(campaign: Campaign) {
-  if (campaign.totalInterviews > 0 && campaign.completedInterviews >= campaign.totalInterviews) {
-    return 100;
-  }
-
-  const completionScore = Math.round(getCompletionPercent(campaign) * 0.7);
-  const inputScore = campaign.totalInterviews > 0 ? 10 : 0;
-  const docScore = (campaign.supportingDocumentNames?.length ?? 0) > 0 ? 10 : 0;
-  const planScore = campaign.questionCount > 0 ? 10 : 0;
-
-  return Math.min(95, completionScore + inputScore + docScore + planScore);
-}
-
-function getCampaignStage(campaign: Campaign) {
-  if (campaign.totalInterviews <= 0) {
-    return "Needs contacts";
-  }
-
-  if (campaign.completedInterviews >= campaign.totalInterviews) {
-    return "Report ready";
-  }
-
-  if (campaign.completedInterviews === 0) {
-    return "Interview 1 plan ready";
-  }
-
-  return `Interview ${campaign.completedInterviews + 1} plan ready`;
-}
-
-function getNextInterview(campaign: Campaign) {
-  const interviews = campaign.interviews ?? [];
+function CampaignRowContent({ campaign }: { campaign: Campaign }) {
   return (
-    interviews.find((interview) => interview.status === "scheduled") ??
-    interviews[interviews.length - 1]
-  );
-}
-
-function getWorkflowState(
-  campaign: Campaign,
-  module: "setup" | "interviews" | "evidence" | "plan" | "report",
-) {
-  if (module === "setup") {
-    return campaign.totalInterviews > 0 && campaign.questionCount > 0 ? "Complete" : "Needs input";
-  }
-
-  if (module === "interviews") {
-    if (campaign.totalInterviews <= 0) return "Waiting";
-    if (campaign.completedInterviews >= campaign.totalInterviews) return "Complete";
-    return `Interview ${campaign.completedInterviews + 1} ready`;
-  }
-
-  if (module === "evidence") {
-    return campaign.completedInterviews > 0 ? "Evidence captured" : "Waiting for call";
-  }
-
-  if (module === "plan") {
-    return campaign.completedInterviews > 0 ? "Sharper plan ready" : "Baseline plan";
-  }
-
-  return getReportReadiness(campaign) >= 100 ? "Ready to share" : "Drafting";
-}
-
-function StatusPill({
-  children,
-  tone = "neutral",
-}: {
-  children: string;
-  tone?: "accent" | "warm" | "neutral";
-}) {
-  const toneClassName =
-    tone === "accent"
-      ? "bg-[var(--accent-wash)] text-[var(--accent-ink)]"
-      : tone === "warm"
-        ? "bg-[var(--status-wash)] text-[var(--status-ink)]"
-        : "bg-[var(--panel-strong)] text-[var(--muted)]";
-
-  return (
-    <span className={`w-fit rounded-md px-2.5 py-1 text-xs font-semibold ${toneClassName}`}>
-      {children}
-    </span>
-  );
-}
-
-function ProgressBar({ value }: { value: number }) {
-  return (
-    <div className="h-2 overflow-hidden rounded-full bg-[var(--panel-strong)]">
-      <div
-        className="h-full rounded-full bg-[var(--accent)]"
-        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
-      />
-    </div>
-  );
-}
-
-function StatTile({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return (
-    <article className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-        {label}
-      </p>
-      <p className="mt-3 font-mono text-2xl font-semibold text-[var(--accent-ink)]">{value}</p>
-      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{detail}</p>
-    </article>
-  );
-}
-
-function WorkflowModule({
-  title,
-  status,
-  detail,
-  active = false,
-}: {
-  title: string;
-  status: string;
-  detail: string;
-  active?: boolean;
-}) {
-  return (
-    <article
-      className={`rounded-lg border p-4 ${
-        active
-          ? "border-[var(--accent-soft)] bg-[var(--accent-wash)]"
-          : "border-[var(--line)] bg-[var(--panel)]"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="text-sm font-semibold text-[var(--foreground)]">{title}</h3>
-        <span
-          className={`h-2.5 w-2.5 rounded-full ${
-            active ? "bg-[var(--accent)]" : "bg-[var(--line)]"
-          }`}
-          aria-hidden="true"
-        />
+    <>
+      <div className="min-w-0">
+        <h2 className="truncate text-base font-semibold text-[var(--foreground)]">
+          {campaign.name}
+        </h2>
+        {campaign.contactsFileName ? (
+          <p className="mt-1 truncate font-mono text-xs text-[var(--muted)] md:hidden">
+            {campaign.contactsFileName}
+          </p>
+        ) : null}
       </div>
-      <p className="mt-3 text-base font-semibold text-[var(--accent-ink)]">{status}</p>
-      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{detail}</p>
-    </article>
+      <p className="min-w-0 text-sm leading-6 text-[var(--muted)] md:truncate">
+        {campaign.goal}
+      </p>
+      <div className="flex flex-wrap gap-2 text-xs font-semibold text-[var(--accent-ink)]">
+        <span className="rounded bg-[var(--accent-wash)] px-2 py-1">
+          {campaign.totalInterviews} contacts
+        </span>
+        <span className="rounded bg-[var(--panel-strong)] px-2 py-1">
+          {campaign.supportingDocumentNames?.length ?? 0} docs
+        </span>
+        <span className="rounded bg-[var(--panel-strong)] px-2 py-1">
+          {campaign.questionCount} questions
+        </span>
+      </div>
+      <p className="font-mono text-sm font-semibold text-[var(--accent-ink)] md:text-right">
+        {campaign.completedInterviews}/{campaign.totalInterviews} interviews completed
+      </p>
+    </>
   );
 }
 
-function CampaignCard({ campaign, onOpen }: { campaign: Campaign; onOpen: (href: string) => void }) {
+function CampaignRow({ campaign, onOpen }: { campaign: Campaign; onOpen: (href: string) => void }) {
+  const rowClassName =
+    "grid w-full gap-3 px-4 py-4 transition md:grid-cols-[18rem_1fr_14rem_13rem] md:items-center md:gap-4 md:px-5";
   const isLinkedCampaign = Boolean(campaign.detailHref);
-  const completionPercent = getCompletionPercent(campaign);
 
   function openCampaign() {
     if (campaign.detailHref) {
@@ -284,85 +154,19 @@ function CampaignCard({ campaign, onOpen }: { campaign: Campaign; onOpen: (href:
   }
 
   return (
-    <article
+    <div
       role={isLinkedCampaign ? "link" : undefined}
       tabIndex={isLinkedCampaign ? 0 : undefined}
       aria-label={isLinkedCampaign ? `Open ${campaign.name}` : undefined}
       onClick={isLinkedCampaign ? openCampaign : undefined}
       onKeyDown={isLinkedCampaign ? handleKeyDown : undefined}
-      className={`rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4 transition ${
+      className={`${rowClassName} ${
         isLinkedCampaign
-          ? "cursor-pointer hover:-translate-y-0.5 hover:border-[var(--accent-soft)] hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+          ? "cursor-pointer hover:bg-[var(--accent-wash)] focus:bg-[var(--accent-wash)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--accent)]"
           : ""
       }`}
     >
-      <div className="flex min-h-40 flex-col">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <StatusPill tone={completionPercent > 0 ? "accent" : "warm"}>
-              {getCampaignStage(campaign)}
-            </StatusPill>
-            <h3 className="mt-3 text-lg font-semibold leading-6 text-[var(--foreground)]">
-              {campaign.name}
-            </h3>
-          </div>
-          <p className="shrink-0 font-mono text-sm font-semibold text-[var(--accent-ink)]">
-            {campaign.completedInterviews}/{campaign.totalInterviews}
-          </p>
-        </div>
-
-        <p className="mt-3 line-clamp-3 text-sm leading-6 text-[var(--muted)]">{campaign.goal}</p>
-
-        <div className="mt-auto pt-5">
-          <ProgressBar value={completionPercent} />
-          <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-[var(--accent-ink)]">
-            <span className="rounded bg-[var(--accent-wash)] px-2 py-1">
-              {pluralize(campaign.totalInterviews, "contact")}
-            </span>
-            <span className="rounded bg-[var(--panel-strong)] px-2 py-1">
-              {pluralize(campaign.supportingDocumentNames?.length ?? 0, "doc")}
-            </span>
-            <span className="rounded bg-[var(--panel-strong)] px-2 py-1">
-              {pluralize(campaign.questionCount, "AI prompt")}
-            </span>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function InterviewPanel({ interview }: { interview?: CampaignInterview }) {
-  if (!interview) {
-    return (
-      <div className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
-        <p className="text-sm font-semibold text-[var(--foreground)]">Next interview</p>
-        <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-          Add contacts to place the next participant in the campaign queue.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-            Next interview
-          </p>
-          <h3 className="mt-2 text-lg font-semibold text-[var(--foreground)]">
-            {interview.participant}
-          </h3>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            {interview.role}, {interview.company}
-          </p>
-        </div>
-        <StatusPill tone={interview.status === "completed" ? "accent" : "warm"}>
-          {interview.status}
-        </StatusPill>
-      </div>
-      <p className="mt-4 text-sm leading-6 text-[var(--muted)]">{interview.summary}</p>
+      <CampaignRowContent campaign={campaign} />
     </div>
   );
 }
@@ -615,260 +419,37 @@ export default function Home() {
     );
   }
 
-  const activeCampaign = campaigns[0];
-  const completedInterviewCount = campaigns.reduce(
-    (total, campaign) => total + campaign.completedInterviews,
-    0,
-  );
-  const totalInterviewCount = campaigns.reduce(
-    (total, campaign) => total + campaign.totalInterviews,
-    0,
-  );
-  const activeCampaignCount = campaigns.filter(
-    (campaign) => campaign.completedInterviews < campaign.totalInterviews,
-  ).length;
-  const nextInterview = getNextInterview(activeCampaign);
-  const activeCompletionPercent = getCompletionPercent(activeCampaign);
-  const reportReadiness = getReportReadiness(activeCampaign);
-  const activeCampaignHref = activeCampaign.detailHref;
-
   return (
     <main className="min-h-screen px-4 py-6 md:px-8 md:py-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-5">
-        <header className="flex flex-col gap-5 border-b border-[var(--line)] pb-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
-              Meridian
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-normal text-[var(--foreground)] md:text-5xl">
-              Campaign Operations
-            </h1>
-            <p className="mt-3 max-w-3xl text-base leading-7 text-[var(--muted)]">
-              Manage AI-led discovery campaigns from research setup through interviews, synthesis,
-              adaptive plans, and stakeholder reports.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2 sm:flex-row">
-            {activeCampaignHref ? (
-              <button
-                type="button"
-                onClick={() => openCampaign(activeCampaignHref)}
-                className="inline-flex h-10 items-center justify-center rounded-md border border-[var(--line)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--panel-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
-              >
-                Open active campaign
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={openCreateCampaign}
-              className="inline-flex h-10 items-center justify-center rounded-md bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
-            >
-              New campaign
-            </button>
-          </div>
+      <div className="mx-auto max-w-6xl">
+        <header className="flex items-center justify-between gap-4 border-b border-[var(--line)] pb-5">
+          <h1 className="text-3xl font-semibold tracking-normal text-[var(--foreground)] md:text-4xl">
+            Campaigns
+          </h1>
+          <button
+            type="button"
+            onClick={openCreateCampaign}
+            className="inline-flex h-10 items-center justify-center rounded-md bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+          >
+            New
+          </button>
         </header>
 
-        <section className="grid gap-3 md:grid-cols-3">
-          <StatTile
-            label="Campaigns"
-            value={String(campaigns.length)}
-            detail={`${activeCampaignCount} active, ${campaigns.length - activeCampaignCount} complete or paused`}
-          />
-          <StatTile
-            label="Interviews"
-            value={`${completedInterviewCount}/${totalInterviewCount}`}
-            detail="Completed across the current research portfolio"
-          />
-          <StatTile
-            label="Report readiness"
-            value={`${reportReadiness}%`}
-            detail={`${activeCampaign.name} is the active campaign`}
-          />
-        </section>
-
-        <section className="grid gap-5 lg:grid-cols-[1fr_24rem]">
-          <article className="rounded-lg border border-[var(--accent-soft)] bg-[var(--panel)] p-5 shadow-sm md:p-6">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-              <div className="max-w-3xl">
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusPill tone="accent">{getCampaignStage(activeCampaign)}</StatusPill>
-                  <StatusPill>{activeCampaign.contactsFileName ?? "No contact file"}</StatusPill>
-                </div>
-                <h2 className="mt-4 text-2xl font-semibold tracking-normal text-[var(--foreground)] md:text-3xl">
-                  {activeCampaign.name}
-                </h2>
-                <p className="mt-3 text-base leading-7 text-[var(--muted)]">
-                  {activeCampaign.goal}
-                </p>
-              </div>
-
-              <div className="min-w-48 rounded-lg border border-[var(--line)] bg-[var(--panel-strong)] p-4">
-                <p className="font-mono text-3xl font-semibold text-[var(--accent-ink)]">
-                  {activeCampaign.completedInterviews}/{activeCampaign.totalInterviews}
-                </p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                  interviews completed
-                </p>
-                <div className="mt-4">
-                  <ProgressBar value={activeCompletionPercent} />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-3 md:grid-cols-5">
-              <WorkflowModule
-                title="Setup"
-                status={getWorkflowState(activeCampaign, "setup")}
-                detail={`${pluralize(activeCampaign.totalInterviews, "contact")} and ${pluralize(
-                  activeCampaign.supportingDocumentNames?.length ?? 0,
-                  "doc",
-                )}`}
-              />
-              <WorkflowModule
-                title="Interview Ops"
-                status={getWorkflowState(activeCampaign, "interviews")}
-                detail="Queue, voice session, transcript fallback"
-                active={activeCampaign.completedInterviews < activeCampaign.totalInterviews}
-              />
-              <WorkflowModule
-                title="Evidence"
-                status={getWorkflowState(activeCampaign, "evidence")}
-                detail={`${activeCampaign.completedInterviews} transcript source${
-                  activeCampaign.completedInterviews === 1 ? "" : "s"
-                }`}
-                active={activeCampaign.completedInterviews > 0}
-              />
-              <WorkflowModule
-                title="Adaptive Plan"
-                status={getWorkflowState(activeCampaign, "plan")}
-                detail={`${pluralize(activeCampaign.questionCount, "AI prompt")} in the plan`}
-                active={activeCampaign.completedInterviews > 0}
-              />
-              <WorkflowModule
-                title="Synthesis"
-                status={getWorkflowState(activeCampaign, "report")}
-                detail={`${reportReadiness}% report readiness`}
-                active={reportReadiness >= 50}
-              />
-            </div>
-          </article>
-
-          <aside className="grid gap-4">
-            <InterviewPanel interview={nextInterview} />
-
-            <div className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                    Report
-                  </p>
-                  <h3 className="mt-2 text-lg font-semibold text-[var(--foreground)]">
-                    Stakeholder draft
-                  </h3>
-                </div>
-                <p className="font-mono text-lg font-semibold text-[var(--accent-ink)]">
-                  {reportReadiness}%
-                </p>
-              </div>
-              <div className="mt-4">
-                <ProgressBar value={reportReadiness} />
-              </div>
-              <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
-                {activeCampaign.report?.executiveSummary ??
-                  "The report will appear after Meridian has evidence from the campaign."}
-              </p>
-            </div>
-          </aside>
-        </section>
-
-        <section className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
-          <article className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                  Living insights
-                </p>
-                <h2 className="mt-2 text-xl font-semibold text-[var(--foreground)]">
-                  Current campaign signal
-                </h2>
-              </div>
-              <StatusPill tone={activeCampaign.completedInterviews > 0 ? "accent" : "warm"}>
-                {activeCampaign.completedInterviews > 0 ? "Evidence-backed" : "Pre-interview"}
-              </StatusPill>
-            </div>
-            <p className="mt-4 text-sm leading-7 text-[var(--muted)]">
-              {activeCampaign.highLevelFindings ??
-                "No findings yet. Meridian will update this once interviews complete."}
-            </p>
-          </article>
-
-          <article className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                  Campaign assets
-                </p>
-                <h2 className="mt-2 text-xl font-semibold text-[var(--foreground)]">
-                  Inputs tied to this run
-                </h2>
-              </div>
-              <StatusPill>{pluralize(activeCampaign.questionCount, "AI prompt")}</StatusPill>
-            </div>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-lg bg-[var(--panel-strong)] p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                  Contacts
-                </p>
-                <p className="mt-2 text-sm font-semibold text-[var(--foreground)]">
-                  {activeCampaign.contactsFileName ?? "Not uploaded"}
-                </p>
-              </div>
-              <div className="rounded-lg bg-[var(--panel-strong)] p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                  Documents
-                </p>
-                <p className="mt-2 text-sm font-semibold text-[var(--foreground)]">
-                  {(activeCampaign.supportingDocumentNames ?? []).join(", ") || "None"}
-                </p>
-              </div>
-              <div className="rounded-lg bg-[var(--panel-strong)] p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                  Next stage
-                </p>
-                <p className="mt-2 text-sm font-semibold text-[var(--foreground)]">
-                  {getCampaignStage(activeCampaign)}
-                </p>
-              </div>
-            </div>
-          </article>
-        </section>
-
-        <section>
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                Portfolio
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
-                Discovery campaigns
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={openCreateCampaign}
-              className="inline-flex h-10 items-center justify-center rounded-md border border-[var(--line)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--panel-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
-            >
-              Add campaign
-            </button>
+        <section className="mt-6 overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--panel)]">
+          <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-[var(--line)] bg-[var(--panel-strong)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)] md:grid-cols-[18rem_1fr_14rem_13rem] md:px-5">
+            <span>Name</span>
+            <span className="hidden md:block">Goal</span>
+            <span className="hidden md:block">Inputs</span>
+            <span className="text-right">Status</span>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="divide-y divide-[var(--line)]">
             {campaigns.map((campaign) => (
-              <CampaignCard key={campaign.id} campaign={campaign} onOpen={openCampaign} />
+              <li key={campaign.id}>
+                <CampaignRow campaign={campaign} onOpen={openCampaign} />
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
       </div>
     </main>
