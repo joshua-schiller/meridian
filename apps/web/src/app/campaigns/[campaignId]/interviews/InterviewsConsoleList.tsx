@@ -167,13 +167,13 @@ function InterviewCard({ interview }: { interview: Interview }) {
       )}
 
       {hasTranscript && (
-        <div className="pl-2 pt-1 border-t border-slate-100">
+        <div className="flex justify-end -mt-1">
           <button
             type="button"
             onClick={() => setIsTranscriptOpen(true)}
-            className="mt-4 inline-flex items-center gap-2 border border-[var(--accent)]/30 bg-[var(--accent-wash)] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[var(--accent)] hover:bg-[var(--accent-soft)] hover:border-[var(--accent)]/60 transition-all duration-200 cursor-pointer"
+            className="inline-flex items-center gap-1.5 border border-[var(--accent)]/30 bg-[var(--accent-wash)] px-3 py-1.5 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent-soft)] hover:border-[var(--accent)]/60 transition-all duration-200 cursor-pointer"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h8M8 8h8m-8 8h5M5 4h14a1 1 0 011 1v11a1 1 0 01-1 1h-6l-4 3v-3H5a1 1 0 01-1-1V5a1 1 0 011-1z" />
             </svg>
             View transcript

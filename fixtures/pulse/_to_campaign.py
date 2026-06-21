@@ -56,11 +56,22 @@ def summarize(label, body):
     return body.split(",")[0].split(" — ")[0].strip()
 
 
+def confidence_from_support(n, total):
+    """Real-world interviews rarely confirm every theme. Let the support count
+    drive confidence so the scores vary instead of all reading 'High'."""
+    if total and n / total >= 0.8:
+        return "High"
+    if total and n / total >= 0.5:
+        return "Medium"
+    return "Low"
+
+
 themes_sorted = sorted(doc["themes"], key=confirmers, reverse=True)
 report_findings = [
     {"title": t["label"], "summary": summarize(t["label"], t["findings"][0]["text"]),
      "body": t["findings"][0]["text"],
-     "confidence": (t["findings"][0].get("confidence") or "medium").capitalize()}
+     "confidence": confidence_from_support(confirmers(t), seq["num_interviews"]),
+     "supportCount": confirmers(t)}
     for t in themes_sorted[:6]
 ]
 

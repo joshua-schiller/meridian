@@ -152,6 +152,10 @@ export default async function CampaignViewPage({ params }: CampaignViewPageProps
                     } else if (finding.confidence === "Medium") {
                       confidenceBadge = "bg-blue-50 text-blue-700";
                     }
+                    const confirmed =
+                      finding.supportCount != null
+                        ? `${finding.supportCount}/${completedCount}`
+                        : getConfirmerRatio(finding.confidence, completedCount);
 
                     return (
                       <div
@@ -174,7 +178,7 @@ export default async function CampaignViewPage({ params }: CampaignViewPageProps
                             {finding.confidence} Confidence
                           </span>
                           <span className="text-xs font-mono text-[var(--muted)] bg-slate-100/80 px-2 py-0.5 border border-slate-200/40">
-                            {getConfirmerRatio(finding.confidence, completedCount)} Confirmed
+                            {confirmed} Confirmed
                           </span>
                         </div>
                       </div>
