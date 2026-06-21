@@ -1,0 +1,13 @@
+{
+  "id": "dossier_ic_006",
+  "contact_id": "ic_006",
+  "summary": "Owen Bradley \u2014 Customer Success Manager at Lumen. Manages account health and renewals; needs early churn signals.",
+  "personalization_hooks": [
+    "Acts on usage drops the morning they happen.",
+    "Presents health scores in customer QBRs."
+  ],
+  "likely_pain_points": [
+    "Account health data is days behind",
+    "Account access requires slow data-team tickets"
+  ]
+}

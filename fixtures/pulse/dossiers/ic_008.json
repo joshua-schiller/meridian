@@ -1,0 +1,13 @@
+{
+  "id": "dossier_ic_008",
+  "contact_id": "ic_008",
+  "summary": "Raj Patel \u2014 Product Analyst at Lumen. A genuine power user who pushes Pulse to its limits daily.",
+  "personalization_hooks": [
+    "Most questions are cross-team and hit permission walls.",
+    "Wants higher query limits, not more guardrails."
+  ],
+  "likely_pain_points": [
+    "Walled off from cross-team data",
+    "Complex queries time out"
+  ]
+}

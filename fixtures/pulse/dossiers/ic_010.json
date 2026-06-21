@@ -1,0 +1,13 @@
+{
+  "id": "dossier_ic_010",
+  "contact_id": "ic_010",
+  "summary": "Derek Olsen \u2014 Regional Sales Director at Lumen. Senior, time-poor sales leader who only checks numbers weekly.",
+  "personalization_hooks": [
+    "Wants one simple pre-built summary screen of his region.",
+    "Falls back to asking an analyst."
+  ],
+  "likely_pain_points": [
+    "Too complex for a non-technical exec",
+    "A report builder is the opposite of what he wants"
+  ]
+}

@@ -1,0 +1,11 @@
+name,role,company,email,team_focus
+Dana Whitfield,Sales Operations Lead,Lumen,dana.whitfield@lumen.io,Query builder too complex for a simple number
+Marcus Lee,Customer Support Lead,Lumen,marcus.lee@lumen.io,Pulse ticket data is hours stale
+Priya Raman,Data Engineer,Lumen,priya.raman@lumen.io,Stale-by-design sync
+Tomás Herrera,Marketing Analyst,Lumen,tomas.herrera@lumen.io,Numbers don't match GA / ad spend
+Grace Kim,Finance Manager,Lumen,grace.kim@lumen.io,Pulse disagrees with the GL
+Owen Bradley,Customer Success Manager,Lumen,owen.bradley@lumen.io,Account health data is days behind
+Hannah Ortiz,Engineering Manager,Lumen,hannah.ortiz@lumen.io,No API / raw query access
+Raj Patel,Product Analyst,Lumen,raj.patel@lumen.io,Walled off from cross-team data
+Lucia Romano,Operations Coordinator,Lumen,lucia.romano@lumen.io,Query builder is intimidating
+Derek Olsen,Regional Sales Director,Lumen,derek.olsen@lumen.io,Too complex for a non-technical exec

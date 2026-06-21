@@ -1,0 +1,13 @@
+{
+  "id": "dossier_ic_002",
+  "contact_id": "ic_002",
+  "summary": "Marcus Lee \u2014 Customer Support Lead at Lumen. Leads support; runs standup off Zendesk dashboards every morning.",
+  "personalization_hooks": [
+    "Compares every Pulse number against Zendesk.",
+    "Muted the noisy Pulse Slack alerts."
+  ],
+  "likely_pain_points": [
+    "Pulse ticket data is hours stale",
+    "Counts don't reconcile with Zendesk"
+  ]
+}

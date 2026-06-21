@@ -1,0 +1,13 @@
+{
+  "id": "dossier_ic_005",
+  "contact_id": "ic_005",
+  "summary": "Grace Kim \u2014 Finance Manager at Lumen. Owns reporting that must reconcile to the penny against the general ledger.",
+  "personalization_hooks": [
+    "Treats the general ledger as the only source of truth.",
+    "Needs fresh numbers during month-end close."
+  ],
+  "likely_pain_points": [
+    "Pulse disagrees with the GL",
+    "Data lags during month-end close"
+  ]
+}

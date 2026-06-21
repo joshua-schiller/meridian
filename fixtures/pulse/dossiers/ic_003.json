@@ -1,0 +1,14 @@
+{
+  "id": "dossier_ic_003",
+  "contact_id": "ic_003",
+  "summary": "Priya Raman \u2014 Data Engineer at Lumen. Owns the ingestion jobs that feed Pulse; sees every problem from the inside.",
+  "personalization_hooks": [
+    "Knows the six-hour sync makes data stale by design.",
+    "Aware of a join bug that double-counts."
+  ],
+  "likely_pain_points": [
+    "Stale-by-design sync",
+    "Known double-count bug",
+    "Flooded with access-request tickets"
+  ]
+}

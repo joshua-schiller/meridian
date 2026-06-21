@@ -1,0 +1,13 @@
+{
+  "id": "dossier_ic_001",
+  "contact_id": "ic_001",
+  "summary": "Dana Whitfield \u2014 Sales Operations Lead at Lumen. Runs sales ops and lives in pipeline numbers; pragmatic and time-poor.",
+  "personalization_hooks": [
+    "Defaults to exporting raw data into a shared team spreadsheet.",
+    "Needs a simple pipeline number fast, not a query builder."
+  ],
+  "likely_pain_points": [
+    "Query builder too complex for a simple number",
+    "Pulse is slow on real queries"
+  ]
+}

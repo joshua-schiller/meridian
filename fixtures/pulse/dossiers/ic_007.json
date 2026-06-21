@@ -1,0 +1,13 @@
+{
+  "id": "dossier_ic_007",
+  "contact_id": "ic_007",
+  "summary": "Hannah Ortiz \u2014 Engineering Manager at Lumen. Leads an eng team that routes around tools it dislikes.",
+  "personalization_hooks": [
+    "Built a self-serve Grafana dashboard off the raw tables.",
+    "Wants an API and raw query access, not a UI."
+  ],
+  "likely_pain_points": [
+    "No API / raw query access",
+    "Pulse UI lags on real data"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "dossier_ic_009",
+  "contact_id": "ic_009",
+  "summary": "Lucia Romano \u2014 Operations Coordinator at Lumen. Non-technical ops coordinator who just wants answers.",
+  "personalization_hooks": [
+    "Wants ready-made dashboards she can glance at.",
+    "Finds the metric jargon confusing."
+  ],
+  "likely_pain_points": [
+    "Query builder is intimidating",
+    "Doesn't recognize the metric names"
+  ]
+}
