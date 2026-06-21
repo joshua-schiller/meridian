@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { campaigns, getCampaignById } from "@/lib/campaigns";
 import InterviewsConsoleList from "./InterviewsConsoleList";
+import CampaignCalibrationTimeline from "./CampaignCalibrationTimeline";
 
 type CampaignInterviewsPageProps = {
   params: Promise<{
@@ -52,6 +53,8 @@ export default async function CampaignInterviewsPage({ params }: CampaignIntervi
             </p>
           </div>
         </header>
+
+        <CampaignCalibrationTimeline campaign={campaign} />
 
         <section className="mt-8">
           <InterviewsConsoleList interviews={campaign.interviews} />
