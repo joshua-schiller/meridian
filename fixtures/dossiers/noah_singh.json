@@ -1,0 +1,15 @@
+{
+  "id": "dossier_pm_002",
+  "contact_id": "pm_002",
+  "summary": "Noah owns discovery for an AI workflow product but does not have a dedicated research partner. His team runs weekly customer calls, pulls signal from sales and support, and needs research artifacts that can influence roadmap decisions quickly.",
+  "personalization_hooks": [
+    "Recently led a sprint review where customer evidence changed the roadmap priority.",
+    "Works with both sales-led enterprise feedback and hands-on user interviews.",
+    "Often has to defend qualitative findings to executives who want clear decision impact."
+  ],
+  "likely_pain_points": [
+    "Translating scattered customer signal into a tighter next interview plan.",
+    "Knowing when qualitative evidence is strong enough to change roadmap direction.",
+    "Producing concise stakeholder-ready summaries from multiple conversations."
+  ]
+}

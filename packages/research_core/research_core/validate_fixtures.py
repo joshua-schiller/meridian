@@ -7,8 +7,11 @@ from .models import Contact, Dossier, LivingInsightDocument, QuestionBank, Trans
 
 FIXTURE_MODELS = {
     "contacts/maya_chen.json": Contact,
+    "contacts/noah_singh.json": Contact,
     "dossiers/maya_chen.json": Dossier,
+    "dossiers/noah_singh.json": Dossier,
     "transcripts/interview_1_maya_chen.json": Transcript,
+    "transcripts/interview_2_noah_singh.json": Transcript,
     "question_banks/interview_1_broad.json": QuestionBank,
     "question_banks/interview_2_expected.json": QuestionBank,
     "insights/initial.json": LivingInsightDocument,

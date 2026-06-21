@@ -103,7 +103,12 @@ Then call either loop mode:
 ```bash
 curl -X POST "http://localhost:8001/research/run-fixture?mode=deterministic"
 curl -X POST "http://localhost:8001/research/run-fixture?mode=claude"
+curl -X POST "http://localhost:8001/demo/run-sequence?mode=auto&session_id=demo-sequence"
+curl -X POST -o artifacts/sequence_report.pdf \
+  "http://localhost:8001/demo/run-sequence/report.pdf?mode=deterministic&session_id=demo-sequence-pdf"
 ```
+
+The sequence endpoint runs Maya's Interview 1 transcript, persists the living insight doc, retrieves it before Noah's Interview 2 transcript, marks repeated findings as confirmed, generates the Interview 3 AI plan, and renders the accumulated PDF report.
 
 When Redis is configured, those POST routes retrieve prior insight state before synthesis and persist the new `LoopResult`, living insight document, and next AI interview plan afterward. The loop response includes `memory.read`, `memory.write`, `metrics.persisted`, `metrics.memory_reads`, `metrics.memory_writes`, and `metrics.retrieved_context_items`. Without Redis, the loop still succeeds and reports memory as disabled.
 

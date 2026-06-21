@@ -27,6 +27,32 @@ def load_demo_inputs(fixtures_dir: Path) -> tuple[Contact, Dossier, Transcript, 
     return contact, dossier, transcript, prior_insight_doc, baseline_question_bank
 
 
+def load_demo_sequence_inputs(
+    fixtures_dir: Path,
+) -> tuple[
+    list[Contact],
+    list[Dossier],
+    list[Transcript],
+    LivingInsightDocument,
+    QuestionBank,
+]:
+    first_contact, first_dossier, first_transcript, prior_doc, baseline_bank = load_demo_inputs(
+        fixtures_dir
+    )
+    second_contact = Contact.model_validate(read_json(fixtures_dir / "contacts/noah_singh.json"))
+    second_dossier = Dossier.model_validate(read_json(fixtures_dir / "dossiers/noah_singh.json"))
+    second_transcript = Transcript.model_validate(
+        read_json(fixtures_dir / "transcripts/interview_2_noah_singh.json")
+    )
+    return (
+        [first_contact, second_contact],
+        [first_dossier, second_dossier],
+        [first_transcript, second_transcript],
+        prior_doc,
+        baseline_bank,
+    )
+
+
 def write_loop_artifacts(output_dir: Path, result: LoopResult) -> list[Path]:
     files = [
         (output_dir / "loop_result.json", result.model_dump(mode="json")),

@@ -109,6 +109,97 @@ def build_stakeholder_report(
     )
 
 
+def build_sequence_report(
+    *,
+    loop_results: list[LoopResult],
+    contacts: list[Contact] | None = None,
+    baseline_question_bank: QuestionBank | None = None,
+) -> StakeholderReport:
+    if not loop_results:
+        raise ValueError("At least one loop result is required.")
+
+    final_result = loop_results[-1]
+    final_doc = final_result.updated_insight_doc
+    key_findings = [
+        ReportFinding(theme_label=theme.label, finding=finding)
+        for theme in final_doc.themes
+        for finding in theme.findings
+    ]
+    evidence_quotes = [
+        f'"{item.quote}" - {item.interviewee}. Takeaway: {item.takeaway}'
+        for result in loop_results
+        for item in result.evidence
+    ][:8]
+    if not evidence_quotes:
+        evidence_quotes = [
+            f'"{quote.quote}" - {quote.interviewee}.'
+            for item in key_findings
+            for quote in item.finding.supporting_quotes[:2]
+        ][:8]
+
+    confirmed_findings = sum(
+        1 for item in key_findings if item.finding.status == "confirmed"
+    )
+    contact_by_id = {contact.id: contact for contact in contacts or []}
+    interview_notes = []
+    for result in loop_results:
+        transcript = result.transcript
+        contact = contact_by_id.get(transcript.interviewee_id)
+        interviewee = contact.name if contact else transcript.interviewee_id
+        interview_notes.append(
+            f"Interview {transcript.interview_number}: Meridian interviewed {interviewee} "
+            f"and produced {len(result.evidence)} evidence links."
+        )
+
+    plan_evolution = [
+        (
+            f"Interview {result.transcript.interview_number} transcript -> "
+            f"Interview {result.next_question_bank.interview_number} AI plan "
+            f"({len(result.next_question_bank.questions)} questions)."
+        )
+        for result in loop_results
+    ]
+    baseline_note = ""
+    if baseline_question_bank is not None:
+        baseline_note = (
+            f" The starting AI plan had {len(baseline_question_bank.questions)} broad questions; "
+            f"the final plan has {len(final_result.next_question_bank.questions)} evidence-grounded questions."
+        )
+
+    return StakeholderReport(
+        title="Meridian Discovery Report",
+        subtitle=(
+            f"Generated after {len(loop_results)} Meridian-conducted interviews"
+        ),
+        research_goal=final_result.transcript.research_goal,
+        executive_summary=[
+            (
+                "Meridian ran an adaptive interview sequence: each transcript updated the living "
+                "insight document before the next AI interview plan was generated."
+            ),
+            (
+                f"Across {len(loop_results)} interviews, {confirmed_findings} findings are now "
+                "confirmed by multiple interviewees, strengthening the discovery signal."
+            ),
+            (
+                "The strongest pattern remains that PMs can often get calls, but synthesis, "
+                "context retrieval, and trust in evidence-backed follow-up questions break the loop."
+            )
+            + baseline_note,
+        ],
+        key_findings=key_findings,
+        evidence=evidence_quotes,
+        next_interview_plan=final_result.next_question_bank,
+        open_questions=final_doc.open_questions,
+        methodology=[
+            *interview_notes,
+            *plan_evolution,
+            "Redis memory stores the living insight document and loop artifacts between interviews when configured.",
+            "The question bank is Meridian's next AI interview plan, not a human interview guide.",
+        ],
+    )
+
+
 def report_to_markdown(report: StakeholderReport) -> str:
     lines = [
         f"# {report.title}",

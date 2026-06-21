@@ -54,3 +54,15 @@ Then let Meridian recover and continue. The point is to show that Meridian is co
 - Do not add unrelated features like email outreach, calendars, or recruiting.
 - Do not make the pain only about scheduling; the product thesis is synthesis and adaptive follow-up.
 - Keep answers substantive but short enough for a live demo.
+
+## Second Interview Fixture
+
+Noah Singh is the pre-staged Interview 2 continuation path. He should not replace the live Maya role unless the team intentionally changes the demo. His fixture exists so Meridian can show that the Interview 2 AI plan was sharper, then prove that the living insight document accumulates evidence across interviewees.
+
+Noah confirms the same core signal from Maya:
+
+- Calls are not the hard part; synthesis before the next interview is.
+- Broad questions continue because nobody owns the synthesis step.
+- Context is scattered across sales, support, and product sources.
+- Trust requires seeing what changed, why it changed, and which evidence caused it.
+- Executives need patterns, confidence, quotes, and whether the second interview confirmed or changed the first interview's direction.

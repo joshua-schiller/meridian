@@ -115,6 +115,7 @@ Rules:
 - Return only a single JSON object. No markdown fences or explanatory prose.
 - Ground every generated question in a direct quote or finding from the transcript.
 - Make the next question bank visibly sharper than the prior broad exploration.
+- Use next_interview_contact and next_interview_dossier, when present, to personalize the opening.
 - Preserve the existing research_goal exactly.
 - Use compact IDs in snake_case.
 - Keep statuses to confirmed, challenged, nuanced, or open.
@@ -128,6 +129,8 @@ def run_claude_adaptive_loop(
     prior_insight_doc: LivingInsightDocument,
     contact: Contact | None = None,
     dossier: Dossier | None = None,
+    next_contact: Contact | None = None,
+    next_dossier: Dossier | None = None,
     next_interviewee_id: str = "pm_002_pending",
     client: ClaudeMessageClient | None = None,
     config: ClaudeLoopConfig | None = None,
@@ -139,6 +142,8 @@ def run_claude_adaptive_loop(
         prior_insight_doc=prior_insight_doc,
         contact=contact,
         dossier=dossier,
+        next_contact=next_contact,
+        next_dossier=next_dossier,
         next_interviewee_id=next_interviewee_id,
     )
     raw_response = client.create_message(
@@ -160,15 +165,19 @@ def build_claude_loop_prompt(
     *,
     transcript: Transcript,
     prior_insight_doc: LivingInsightDocument,
-    contact: Contact | None,
-    dossier: Dossier | None,
-    next_interviewee_id: str,
+    contact: Contact | None = None,
+    dossier: Dossier | None = None,
+    next_contact: Contact | None = None,
+    next_dossier: Dossier | None = None,
+    next_interviewee_id: str = "pm_002_pending",
 ) -> str:
     payload = {
         "research_goal": transcript.research_goal,
         "next_interviewee_id": next_interviewee_id,
-        "contact": contact.model_dump(mode="json") if contact else None,
-        "dossier": dossier.model_dump(mode="json") if dossier else None,
+        "completed_interview_contact": contact.model_dump(mode="json") if contact else None,
+        "completed_interview_dossier": dossier.model_dump(mode="json") if dossier else None,
+        "next_interview_contact": next_contact.model_dump(mode="json") if next_contact else None,
+        "next_interview_dossier": next_dossier.model_dump(mode="json") if next_dossier else None,
         "transcript": transcript.model_dump(mode="json"),
         "prior_insight_doc": prior_insight_doc.model_dump(mode="json"),
         "required_response_shape": {
