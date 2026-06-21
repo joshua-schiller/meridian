@@ -21,6 +21,7 @@ export type CampaignReportFinding = {
   body: string;
   confidence: "High" | "Medium" | "Low";
   supportCount?: number;
+  syncedSupportCount?: number;
 };
 
 export type CampaignReport = {
@@ -29,6 +30,11 @@ export type CampaignReport = {
   contradictions: string[];
   recommendedNextSteps: string[];
   methodology: string;
+};
+
+export type CampaignQuestion = {
+  question: string;
+  rationale: string;
 };
 
 export type Campaign = {
@@ -41,6 +47,10 @@ export type Campaign = {
   supportingDocumentNames: string[];
   questionCount: number;
   highLevelFindings: string;
+  syncedCompletedInterviews?: number;
+  syncedHighLevelFindings?: string;
+  currentQuestions?: CampaignQuestion[];
+  syncedCurrentQuestions?: CampaignQuestion[];
   interviews: CampaignInterview[];
   report: CampaignReport;
 };
@@ -58,6 +68,44 @@ export const campaigns: Campaign[] = [
     ],
     "questionCount": 3,
     "highLevelFindings": "Across 8 internal interviews, adoption fails on trust, not features. The strongest patterns are stale data makes pulse unusable for operational and time-critical decisions (7/8), spreadsheets, source tools, and custom-built solutions become the real source of truth (6/8), data accuracy mismatches and known bugs destroy trust in pulse numbers (5/8). People revert to spreadsheets and source systems because they don't believe Pulse's numbers.",
+    "syncedCompletedInterviews": 9,
+    "syncedHighLevelFindings": "Across 9 internal interviews, adoption fails on trust, not features. The strongest patterns are stale data makes Pulse unusable for operational and time-critical decisions (8/9), spreadsheets, source tools, and custom-built solutions become the real source of truth (7/9), data accuracy mismatches and known bugs destroy trust in Pulse numbers (6/9). Lucia's interview strengthened the non-technical dashboard pattern: Operations needs ready-made views, plain-language metric names, and visible freshness before Pulse can become part of daily work.",
+    "currentQuestions": [
+      {
+        "question": "When you open Pulse, what is the first thing that makes you feel unsure where to start?",
+        "rationale": "Tests whether query-builder intimidation extends beyond Sales, Support, and Finance into Operations."
+      },
+      {
+        "question": "Which operational metrics would you expect to be ready-made, without building a query?",
+        "rationale": "Validates whether role-specific starter dashboards can replace the current build-it-yourself workflow."
+      },
+      {
+        "question": "How do confusing metric names or missing freshness cues change whether you trust the number?",
+        "rationale": "Probes the trust gap around metric definitions, lineage, and stale data."
+      },
+      {
+        "question": "When Pulse fails, who do you ask for the number instead, and how long does that detour take?",
+        "rationale": "Measures the analyst-as-middleman workaround and its operational cost."
+      }
+    ],
+    "syncedCurrentQuestions": [
+      {
+        "question": "Lucia said she needs ready-made operational dashboards instead of a builder. For your region, what three numbers should be waiting when you open Pulse?",
+        "rationale": "Carries forward the pre-built dashboard theme while tailoring it to Derek's sales-leadership role."
+      },
+      {
+        "question": "When a Pulse number looks off before a QBR, do you verify it, ask an analyst, or abandon it?",
+        "rationale": "Tests the trust-collapse pattern in a high-stakes leadership meeting context."
+      },
+      {
+        "question": "How important is a mobile or lightweight view when you're away from your desk and need a number?",
+        "rationale": "Adds a field-access probe from Lucia's workflow constraints and Derek's likely sales-director context."
+      },
+      {
+        "question": "Would freshness timestamps and plain-language metric definitions make you comfortable citing Pulse in leadership meetings?",
+        "rationale": "Keeps the trust and data-lineage hypothesis in the plan while checking if it changes executive-facing behavior."
+      }
+    ],
     "interviews": [
       {
         "id": "ic-001",
@@ -708,42 +756,48 @@ export const campaigns: Campaign[] = [
           "summary": "Pulse data is stale by design — a six-hour sync and multi-day close lags — so teams can't trust it for time-sensitive decisions.",
           "body": "Data is stale by design (6-hour sync cycle, multi-day lags during close, or days-old account health signals), making Pulse structurally unfit for intraday, event-driven, customer-facing, or month-end decisions across multiple teams.",
           "confidence": "High",
-          "supportCount": 7
+          "supportCount": 7,
+          "syncedSupportCount": 8
         },
         {
           "title": "Spreadsheets, source tools, and custom-built solutions become the real source of truth",
           "summary": "Teams across the company bypass Pulse, falling back to spreadsheets and self-built dashboards as their real source of truth.",
           "body": "Users across Sales Ops, Support, Marketing, Finance, Engineering, Customer Success, Product Analysis, and Operations bypass Pulse entirely — exporting to spreadsheets, staying in source systems, building their own dashboards, pulling data manually, waiting on the data team, or escaping to notebooks — which become the team's de facto source of truth.",
           "confidence": "Medium",
-          "supportCount": 6
+          "supportCount": 6,
+          "syncedSupportCount": 7
         },
         {
           "title": "Data accuracy mismatches and known bugs destroy trust in Pulse numbers",
           "summary": "When Pulse numbers don't match the source systems, people stop trusting all of it and rebuild the figures by hand.",
           "body": "When Pulse figures disagree with source-system numbers, users lose confidence in all Pulse data, stop presenting it to stakeholders, and rebuild figures manually to defend in meetings.",
           "confidence": "Medium",
-          "supportCount": 5
+          "supportCount": 5,
+          "syncedSupportCount": 6
         },
         {
           "title": "Query builder too complex for power users and non-technical users alike — but for opposite reasons",
           "summary": "The query builder overwhelms non-technical users yet boxes in power users — it satisfies neither end of the spectrum.",
           "body": "Non-technical users find the query builder overwhelming for simple tasks, while technical users hit a ceiling when they need advanced SQL constructs, higher query limits, or API access — the tool satisfies neither end of the spectrum.",
           "confidence": "Medium",
-          "supportCount": 4
+          "supportCount": 4,
+          "syncedSupportCount": 5
         },
         {
           "title": "Absence of data lineage, freshness indicators, and plain-language metric definitions forces users to distrust Pulse by default",
           "summary": "Pulse data is stale by design — a six-hour sync and multi-day close lags — so teams can't trust it for time-sensitive decisions.",
           "body": "Users cannot see when data was last refreshed or trace a Pulse number back to its source calculation; non-technical users additionally cannot decode jargon metric names to know if they've selected the right metric — forcing everyone to assume the worst and revert to source systems for anything consequential.",
           "confidence": "Medium",
-          "supportCount": 4
+          "supportCount": 4,
+          "syncedSupportCount": 5
         },
         {
           "title": "Slow query performance and timeouts undermine trust and usability",
           "summary": "Full-scale queries lag or time out, so users abandon Pulse mid-task — and the heaviest users suffer the most.",
           "body": "Full-scale queries take so long to load — or time out entirely — that users abandon Pulse mid-workflow; the lag and timeout ceiling scale with data volume and query complexity, meaning the heaviest users suffer most.",
           "confidence": "Low",
-          "supportCount": 3
+          "supportCount": 3,
+          "syncedSupportCount": 4
         }
       ],
       "contradictions": [
