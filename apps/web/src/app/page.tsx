@@ -331,7 +331,7 @@ export default function Home() {
           <PageHeader title="Create Campaign" onHome={goHome} />
 
           <form onSubmit={handleCreateSubmit} noValidate className="relative mt-8 w-full">
-            <section className="rounded-2xl border border-slate-200 bg-white/95 p-8 md:p-14 shadow-[0_12px_40px_rgba(10,102,194,0.04)] min-h-[420px] flex flex-col justify-between relative overflow-hidden">
+            <section className="rounded-none border border-slate-200 bg-white/95 p-8 md:p-14 shadow-[0_12px_40px_rgba(10,102,194,0.04)] min-h-[420px] flex flex-col justify-between relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-100/20 to-transparent rounded-full blur-3xl pointer-events-none" />
 
               {/* Multi-step progress bar */}
