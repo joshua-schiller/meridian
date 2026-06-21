@@ -31,7 +31,7 @@ def _ant_key() -> str:
 # Aura-2 is Deepgram's newer, more natural/expressive TTS family. Override the
 # voice with DEEPGRAM_TTS_MODEL (e.g. aura-2-andromeda-en, aura-2-cora-en).
 def _tts_model() -> str:
-    return os.environ.get("DEEPGRAM_TTS_MODEL", "aura-2-thalia-en")
+    return os.environ.get("DEEPGRAM_TTS_MODEL", "aura-2-hera-en")
 
 
 async def synthesize_speech(text: str, model: str | None = None) -> bytes:
@@ -51,10 +51,16 @@ async def synthesize_speech(text: str, model: str | None = None) -> bytes:
 
 # Voices offered in the picker. Keep in sync with the frontend list.
 VOICE_CHOICES = {
-    "aura-2-thalia-en",
+    "aura-2-hera-en",
     "aura-2-andromeda-en",
+    "aura-2-thalia-en",
     "aura-2-cora-en",
     "aura-2-helena-en",
+    "aura-2-luna-en",
+    "aura-2-athena-en",
+    "aura-2-juno-en",
+    "aura-2-vesta-en",
+    "aura-2-cordelia-en",
     "aura-2-apollo-en",
     "aura-2-orion-en",
     "aura-asteria-en",

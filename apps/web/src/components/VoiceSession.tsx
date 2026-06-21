@@ -26,12 +26,20 @@ const API_WS_BASE =
 const API_HTTP_BASE =
   process.env.NEXT_PUBLIC_API_HTTP_URL ?? "http://localhost:8001";
 
-// Keep in sync with VOICE_CHOICES in apps/api/app/deepgram_voice.py
+// A curated set of Aura-2 American-English voices. Deepgram offers ~36 of
+// these (90 total across languages); keep this list in sync with VOICE_CHOICES
+// in apps/api/app/deepgram_voice.py. Andromeda first = the default.
 const VOICES: { id: string; label: string; desc: string }[] = [
-  { id: "aura-2-thalia-en", label: "Thalia", desc: "Clear, confident, warm" },
+  { id: "aura-2-hera-en", label: "Hera", desc: "Smooth, warm, pro" },
   { id: "aura-2-andromeda-en", label: "Andromeda", desc: "Casual, expressive" },
+  { id: "aura-2-thalia-en", label: "Thalia", desc: "Clear, confident" },
   { id: "aura-2-cora-en", label: "Cora", desc: "Smooth, melodic" },
   { id: "aura-2-helena-en", label: "Helena", desc: "Caring, natural" },
+  { id: "aura-2-luna-en", label: "Luna", desc: "Friendly, engaging" },
+  { id: "aura-2-athena-en", label: "Athena", desc: "Calm, professional" },
+  { id: "aura-2-juno-en", label: "Juno", desc: "Natural, melodic" },
+  { id: "aura-2-vesta-en", label: "Vesta", desc: "Expressive, patient" },
+  { id: "aura-2-cordelia-en", label: "Cordelia", desc: "Approachable, warm" },
   { id: "aura-2-apollo-en", label: "Apollo", desc: "Confident male" },
   { id: "aura-2-orion-en", label: "Orion", desc: "Approachable male" },
 ];
