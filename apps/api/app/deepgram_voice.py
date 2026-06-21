@@ -254,7 +254,10 @@ class VoiceSession:
         await self._send({"type": "transcript_final", "text": text, "turn_id": turn_id})
 
         question_idx = self.question_idx
-        if self.scripted or not _ant_key():
+        # Use the live Claude interviewer in both scripted and live modes so the
+        # scripted demo path also reacts to what the interviewee said. The
+        # deterministic fallback still kicks in automatically when no API key.
+        if not _ant_key():
             response = self._fallback_agent_response(question_idx)
         else:
             response = await generate_interviewer_response(
