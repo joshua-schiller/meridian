@@ -44,10 +44,15 @@ def load_demo_sequence_inputs(
     second_transcript = Transcript.model_validate(
         read_json(fixtures_dir / "transcripts/interview_2_noah_singh.json")
     )
+    third_contact = Contact.model_validate(read_json(fixtures_dir / "contacts/ava_martinez.json"))
+    third_dossier = Dossier.model_validate(read_json(fixtures_dir / "dossiers/ava_martinez.json"))
+    third_transcript = Transcript.model_validate(
+        read_json(fixtures_dir / "transcripts/interview_3_ava_martinez.json")
+    )
     return (
-        [first_contact, second_contact],
-        [first_dossier, second_dossier],
-        [first_transcript, second_transcript],
+        [first_contact, second_contact, third_contact],
+        [first_dossier, second_dossier, third_dossier],
+        [first_transcript, second_transcript, third_transcript],
         prior_doc,
         baseline_bank,
     )

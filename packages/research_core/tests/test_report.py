@@ -36,6 +36,8 @@ class ReportTests(unittest.TestCase):
         self.assertIn("Next AI Interview Plan", markdown)
         self.assertIn("AI interviewer's next-call plan", markdown)
         self.assertIn("Synthesis, not scheduling", markdown)
+        self.assertIn("Recommended Next Steps", markdown)
+        self.assertIn("Contradictions & Nuance", markdown)
         self.assertIn(result.next_question_bank.questions[0].primary, markdown)
 
     def test_report_pdf_renders_valid_pdf_bytes(self) -> None:
@@ -76,22 +78,35 @@ class ReportTests(unittest.TestCase):
             prior_insight_doc=first_result.updated_insight_doc,
             contact=contacts[1],
             dossier=dossiers[1],
-            next_interviewee_id="pm_003_pending",
+            next_contact=contacts[2],
+            next_dossier=dossiers[2],
+            next_interviewee_id=contacts[2].id,
+        )
+        third_result = run_adaptive_loop(
+            transcript=transcripts[2],
+            prior_insight_doc=second_result.updated_insight_doc,
+            contact=contacts[2],
+            dossier=dossiers[2],
+            next_interviewee_id="pm_004_pending",
         )
 
         report = build_sequence_report(
-            loop_results=[first_result, second_result],
+            loop_results=[first_result, second_result, third_result],
             contacts=contacts,
             baseline_question_bank=baseline_bank,
         )
         markdown = report_to_markdown(report)
         pdf_bytes = render_report_pdf(report)
 
-        self.assertIn("Generated after 2 Meridian-conducted interviews", markdown)
+        self.assertIn("Generated after 3 Meridian-conducted interviews", markdown)
         self.assertIn("Interview 1", markdown)
         self.assertIn("Interview 2", markdown)
-        self.assertIn("confirmed", markdown)
         self.assertIn("Interview 3", markdown)
+        self.assertIn("confirmed", markdown)
+        self.assertIn("Interview 4", markdown)
+        self.assertIn("Recommended Next Steps", markdown)
+        self.assertIn("Contradictions & Nuance", markdown)
+        self.assertIn("24-hour decision memo", markdown)
         self.assertIn("The question bank is Meridian's next AI interview plan", markdown)
         self.assertTrue(pdf_bytes.startswith(b"%PDF"))
         self.assertGreater(len(pdf_bytes), 5000)

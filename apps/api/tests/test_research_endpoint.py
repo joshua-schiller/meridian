@@ -7,7 +7,15 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from apps.api.app.main import app
-from apps.api.app.redis_memory import InMemoryResearchMemory
+from apps.api.app.redis_memory import (
+    DisabledResearchMemory,
+    InMemoryResearchMemory,
+    VECTOR_DIMENSIONS,
+    embed_text,
+    embed_text_bytes,
+    parse_vector_set_result,
+    parse_vector_search_result,
+)
 from research_core.claude_loop import ClaudeLoopError
 from research_core.fixture_io import load_demo_inputs
 from research_core.loop import run_adaptive_loop
@@ -21,6 +29,16 @@ def load_fixture_transcript() -> dict:
 
 
 class ResearchEndpointTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.memory_patcher = patch(
+            "apps.api.app.main.get_memory_store",
+            return_value=DisabledResearchMemory("Test memory disabled."),
+        )
+        self.memory_patcher.start()
+
+    def tearDown(self) -> None:
+        self.memory_patcher.stop()
+
     def test_run_fixture_endpoint_returns_grounded_loop_payload(self) -> None:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
@@ -265,24 +283,118 @@ class ResearchEndpointTests(unittest.TestCase):
         payload = response.json()
 
         self.assertEqual(payload["session_id"], session_id)
-        self.assertEqual(payload["metrics"]["interviews_run"], 2)
-        self.assertEqual(len(payload["loops"]), 2)
+        self.assertEqual(payload["metrics"]["interviews_run"], 3)
+        self.assertEqual(len(payload["loops"]), 3)
         self.assertEqual(payload["loops"][0]["question_bank_after"]["interview_number"], 2)
         self.assertEqual(payload["loops"][0]["question_bank_after"]["for_interviewee"], "pm_002")
         self.assertEqual(payload["loops"][1]["question_bank_after"]["interview_number"], 3)
-        self.assertEqual(payload["metrics"]["memory_read_statuses"], ["miss", "hit"])
-        self.assertEqual(payload["metrics"]["memory_write_statuses"], ["persisted", "persisted"])
+        self.assertEqual(payload["loops"][1]["question_bank_after"]["for_interviewee"], "pm_003")
+        self.assertEqual(payload["loops"][2]["question_bank_after"]["interview_number"], 4)
+        self.assertEqual(payload["metrics"]["memory_read_statuses"], ["miss", "hit", "hit"])
+        self.assertEqual(payload["metrics"]["memory_write_statuses"], ["persisted", "persisted", "persisted"])
         self.assertGreaterEqual(payload["metrics"]["confirmed_findings"], 1)
+        self.assertGreaterEqual(payload["metrics"]["nuanced_findings"], 1)
+        self.assertEqual(payload["metrics"]["contradictions"], 1)
         self.assertGreater(payload["metrics"]["retrieved_context_items"][1], 0)
         self.assertIn("Noah", payload["loops"][0]["question_bank_after"]["personalized_opening"])
+        self.assertIn("Ava", payload["loops"][1]["question_bank_after"]["personalized_opening"])
+        self.assertTrue(
+            any(
+                "decision memo" in question["primary"].lower()
+                for question in payload["loops"][2]["question_bank_after"]["questions"]
+            )
+        )
         self.assertIn(
-            "Generated after 2 Meridian-conducted interviews",
+            "Generated after 3 Meridian-conducted interviews",
             payload["report_markdown"],
         )
+        self.assertIn("Recommended Next Steps", payload["report_markdown"])
         self.assertEqual(payload["memory_state"]["event_ids"], [
             "loop_after_interview_001",
             "loop_after_interview_002",
+            "loop_after_interview_003",
         ])
+
+    def test_research_session_reset_clears_memory_state(self) -> None:
+        memory = InMemoryResearchMemory()
+        session_id = "reset-test"
+        with (
+            warnings.catch_warnings(),
+            patch("apps.api.app.main.get_memory_store", return_value=memory),
+        ):
+            warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
+            client = TestClient(app)
+
+            run = client.post(
+                f"/demo/run-sequence?mode=deterministic&session_id={session_id}"
+            )
+            reset = client.delete(f"/research/sessions/{session_id}")
+            state = client.get(f"/research/sessions/{session_id}")
+
+        run.raise_for_status()
+        reset.raise_for_status()
+        state.raise_for_status()
+        self.assertEqual(reset.json()["reset"]["status"], "reset")
+        self.assertEqual(state.json()["status"], "miss")
+        self.assertEqual(state.json()["event_ids"], [])
+
+    def test_vector_helpers_are_deterministic_and_parse_redis_results(self) -> None:
+        class FakeVectorClient:
+            def execute_command(self, command: str, key: str, item_id: str) -> str:
+                return json.dumps(
+                    {
+                        "theme_id": "theme_synthesis",
+                        "theme": "Synthesis",
+                        "finding_id": "finding_1",
+                        "finding": "Synthesis is late.",
+                        "status": "confirmed",
+                        "confidence": "high",
+                        "quote": "The decision is already made.",
+                    }
+                )
+
+        first = embed_text("synthesis context evidence")
+        second = embed_text("synthesis context evidence")
+        self.assertEqual(first, second)
+        self.assertEqual(len(first), VECTOR_DIMENSIONS)
+        self.assertEqual(len(embed_text_bytes("synthesis context evidence")), VECTOR_DIMENSIONS * 4)
+
+        parsed = parse_vector_search_result(
+            [
+                1,
+                "meridian:vector:session:demo:finding_1",
+                [
+                    "theme_id",
+                    "theme_synthesis",
+                    "theme",
+                    "Synthesis",
+                    "finding_id",
+                    "finding_1",
+                    "finding",
+                    "Synthesis is late.",
+                    "status",
+                    "confirmed",
+                    "confidence",
+                    "high",
+                    "quote",
+                    "The decision is already made.",
+                    "vector_score",
+                    "0.12",
+                ],
+            ]
+        )
+
+        self.assertEqual(parsed[0]["finding_id"], "finding_1")
+        self.assertEqual(parsed[0]["vector_score"], 0.12)
+
+        vector_set = parse_vector_set_result(
+            FakeVectorClient(),
+            "vector-key",
+            ["finding_1", "0.99"],
+        )
+        self.assertEqual(vector_set[0]["finding_id"], "finding_1")
+        self.assertEqual(vector_set[0]["vector_score"], 0.99)
+        self.assertEqual(vector_set[0]["quotes"][0]["interviewee"], "redis_vectorset")
 
     def test_demo_sequence_report_pdf_returns_accumulated_pdf(self) -> None:
         memory = InMemoryResearchMemory()

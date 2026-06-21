@@ -5,6 +5,7 @@ from statistics import mean
 
 from .models import (
     Contact,
+    Contradiction,
     Dossier,
     Finding,
     InsightTheme,
@@ -117,6 +118,15 @@ def extract_findings(transcript: Transcript) -> list[ExtractedFinding]:
             "Executives need the pattern, the confidence level, and a few quotes.",
             "The final report should emphasize confidence, quotes, and recommended decisions.",
         ),
+        (
+            "decision_memo_cadence",
+            "theme_report_cadence",
+            "Report cadence needs to match decision speed",
+            "Teams may need a fast decision memo after each interview and a fuller stakeholder PDF only after enough evidence accumulates.",
+            "24-hour decision memo",
+            "We do not need a full PDF after every single call; we need a 24-hour decision memo.",
+            "The report flow should distinguish immediate decision support from the final accumulated PDF.",
+        ),
     ]
 
     findings: list[ExtractedFinding] = []
@@ -191,6 +201,29 @@ def update_living_insight_doc(
                 existing_finding.status = "confirmed"
                 existing_finding.confidence = "high"
 
+    text = "\n".join(
+        turn.text for turn in transcript.turns if turn.speaker == "interviewee"
+    ).lower()
+    contradictions = list(prior_insight_doc.contradictions)
+    if "24-hour decision memo" in text:
+        contradiction = Contradiction(
+            between=["pm_001", transcript.interviewee_id],
+            description=(
+                "Maya emphasized a stakeholder-ready PDF with patterns, confidence, and quotes; "
+                f"{transcript.interviewee_id} says executives first need a fast decision memo, "
+                "with the full PDF after multiple interviews."
+            ),
+        )
+        if not any(item.description == contradiction.description for item in contradictions):
+            contradictions.append(contradiction)
+
+        report_theme = themes_by_id.get("theme_stakeholder_report")
+        if report_theme is not None:
+            for finding in report_theme.findings:
+                if finding.id == "report_needs_decision_support":
+                    finding.status = "nuanced"
+                    finding.confidence = "high"
+
     open_questions = [
         "Do other PMs also see synthesis as a bigger blocker than recruiting?",
         "How often do teams currently update interview guides between calls?",
@@ -198,13 +231,17 @@ def update_living_insight_doc(
         "What evidence format makes an AI-generated question bank trustworthy?",
         "What report structure helps executives make a product decision from qualitative research?",
     ]
+    if contradictions:
+        open_questions.append(
+            "Should Meridian produce a fast decision memo after each call and reserve the full PDF for accumulated evidence?"
+        )
 
     return LivingInsightDocument(
         id=f"insight_doc_after_interview_{transcript.interview_number:03d}",
         research_goal=prior_insight_doc.research_goal,
         themes=list(themes_by_id.values()),
         open_questions=open_questions,
-        contradictions=prior_insight_doc.contradictions,
+        contradictions=contradictions,
     )
 
 
@@ -286,6 +323,20 @@ def generate_next_question_bank(
             0.77,
         ),
     ]
+    if finding_by_id.get("decision_memo_cadence") is not None:
+        questions.append(
+            question_from_finding(
+                "q5",
+                finding_by_id.get("decision_memo_cadence"),
+                "When should Meridian produce a fast decision memo versus the full stakeholder PDF?",
+                "Tests the newly surfaced cadence nuance: executives may need a 24-hour decision artifact before the accumulated final report.",
+                [
+                    "Who needs the fast memo?",
+                    "What belongs in the memo that should not wait for the full report?",
+                ],
+                0.88,
+            )
+        )
 
     return QuestionBank(
         id=f"question_bank_interview_{interview_number:03d}_generated",
@@ -328,6 +379,7 @@ def link_evidence_to_questions(
         "context_is_scattered": "q2",
         "trust_needs_evidence": "q3",
         "report_needs_decision_support": "q4",
+        "decision_memo_cadence": "q5",
     }
     return [
         LoopEvidence(

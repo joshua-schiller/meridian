@@ -1,0 +1,15 @@
+{
+  "id": "dossier_pm_003",
+  "contact_id": "pm_003",
+  "summary": "Ava runs a small product team where discovery happens continuously, but synthesis often arrives after the roadmap conversation has already moved on. She cares about evidence quality, decision cadence, and whether qualitative research can change executive priorities fast enough.",
+  "personalization_hooks": [
+    "Recently changed a launch priority after a support escalation revealed a larger workflow issue.",
+    "Manages multiple PMs who each keep discovery notes in different formats.",
+    "Has pushed executives to accept qualitative evidence when it is tied to decisions and customer quotes."
+  ],
+  "likely_pain_points": [
+    "Synthesis arrives after roadmap decisions are already in motion.",
+    "No single owner is accountable for updating the next interview plan.",
+    "Executives need a fast decision memo before a polished final report."
+  ]
+}

@@ -55,7 +55,7 @@ Then let Meridian recover and continue. The point is to show that Meridian is co
 - Do not make the pain only about scheduling; the product thesis is synthesis and adaptive follow-up.
 - Keep answers substantive but short enough for a live demo.
 
-## Second Interview Fixture
+## Follow-Up Interview Fixtures
 
 Noah Singh is the pre-staged Interview 2 continuation path. He should not replace the live Maya role unless the team intentionally changes the demo. His fixture exists so Meridian can show that the Interview 2 AI plan was sharper, then prove that the living insight document accumulates evidence across interviewees.
 
@@ -66,3 +66,9 @@ Noah confirms the same core signal from Maya:
 - Context is scattered across sales, support, and product sources.
 - Trust requires seeing what changed, why it changed, and which evidence caused it.
 - Executives need patterns, confidence, quotes, and whether the second interview confirmed or changed the first interview's direction.
+
+Ava Martinez is the pre-staged Interview 3 continuation path. She confirms the same synthesis and scattered-context bottlenecks, then adds an important report nuance:
+
+- The next interview plan has to change within a day, not a week.
+- Executives may need a 24-hour decision memo before the final stakeholder PDF.
+- The final PDF still matters, but only after multiple interviews show whether the pattern holds.

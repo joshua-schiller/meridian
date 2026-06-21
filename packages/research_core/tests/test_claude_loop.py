@@ -166,6 +166,8 @@ class ClaudeLoopTests(unittest.TestCase):
         self.assertIn(transcripts[0].id, prompt)
         self.assertIn(prior_doc.id, prompt)
         self.assertIn("next_question_bank", prompt)
+        self.assertIn("demo_quality_bar", prompt)
+        self.assertIn("The next bank must target exact findings", prompt)
         self.assertIn("completed_interview_contact", prompt)
         self.assertIn("next_interview_contact", prompt)
         self.assertIn("Noah Singh", prompt)

@@ -41,13 +41,13 @@ class ClaudeMessageClient(Protocol):
 class ClaudeLoopConfig:
     api_key: str | None = None
     model: str = DEFAULT_CLAUDE_MODEL
-    max_tokens: int = 4096
+    max_tokens: int = 6144
     timeout_seconds: float = 90.0
     debug_dir: Path | None = None
 
     @classmethod
     def from_env(cls) -> "ClaudeLoopConfig":
-        max_tokens = os.environ.get("CLAUDE_MAX_TOKENS", "4096")
+        max_tokens = os.environ.get("CLAUDE_MAX_TOKENS", "6144")
         timeout_seconds = os.environ.get("CLAUDE_TIMEOUT_SECONDS", "90")
         debug_dir = os.environ.get("CLAUDE_DEBUG_DIR")
         return cls(
@@ -114,12 +114,14 @@ Your job is to transform one discovery-call transcript into:
 Rules:
 - Return only a single JSON object. No markdown fences or explanatory prose.
 - Ground every generated question in a direct quote or finding from the transcript.
-- Make the next question bank visibly sharper than the prior broad exploration.
+- Make the next question bank visibly sharper than the prior broad exploration; a judge should understand the delta in under 10 seconds.
 - Use next_interview_contact and next_interview_dossier, when present, to personalize the opening.
 - Preserve the existing research_goal exactly.
 - Use compact IDs in snake_case.
 - Keep statuses to confirmed, challenged, nuanced, or open.
 - Keep confidence to high, medium, or low.
+- Prefer concrete behavioral questions over generic "tell me about your process" questions.
+- Treat the question bank as the AI interviewer's operating plan for the next Meridian-conducted interview, not as a human interview guide.
 """
 
 
@@ -153,8 +155,35 @@ def run_claude_adaptive_loop(
         system=SYSTEM_PROMPT,
         user_prompt=prompt,
     )
+    try:
+        return parse_claude_loop_response(
+            raw_response=raw_response,
+            transcript=transcript,
+            prior_insight_doc=prior_insight_doc,
+            debug_dir=config.debug_dir,
+        )
+    except ClaudeLoopError as exc:
+        if "not valid JSON" not in str(exc):
+            raise
+
+    repaired_response = client.create_message(
+        model=config.model,
+        max_tokens=config.max_tokens,
+        timeout_seconds=config.timeout_seconds,
+        system=(
+            "You repair malformed JSON for Meridian. Return only one valid compact JSON "
+            "object with keys updated_insight_doc, next_question_bank, evidence, and summary. "
+            "Use at most 4 themes, 6 findings, 4 questions, and 5 evidence items. No markdown."
+        ),
+        user_prompt=(
+            "Repair this truncated or malformed JSON into a valid object matching the original "
+            "contract. Preserve the research goal, interview_number increment, grounded questions, "
+            "and the strongest evidence. Malformed response:\n"
+            f"{raw_response}"
+        ),
+    )
     return parse_claude_loop_response(
-        raw_response=raw_response,
+        raw_response=repaired_response,
         transcript=transcript,
         prior_insight_doc=prior_insight_doc,
         debug_dir=config.debug_dir,
@@ -180,6 +209,32 @@ def build_claude_loop_prompt(
         "next_interview_dossier": next_dossier.model_dump(mode="json") if next_dossier else None,
         "transcript": transcript.model_dump(mode="json"),
         "prior_insight_doc": prior_insight_doc.model_dump(mode="json"),
+        "demo_quality_bar": {
+            "compact_output": (
+                "Return at most 4 themes, 6 total findings, 4 next questions, and 5 evidence items. "
+                "Use short quote excerpts. Valid JSON is more important than exhaustiveness."
+            ),
+            "question_delta": (
+                "The next bank must target exact findings, contradictions, confidence gaps, "
+                "or evidence needs from this transcript. Avoid broad discovery warmups."
+            ),
+            "grounding": (
+                "Each question.grounding item should cite a direct quote or named finding. "
+                "Each evidence item should connect one quote to a finding_id and, when useful, a question_id."
+            ),
+            "specificity": (
+                "Use specificity_score >= 0.75 for questions that are clearly sharper than the starting plan."
+            ),
+            "report_readiness": (
+                "The insight doc should preserve confidence levels, open questions, and contradictions or nuances "
+                "that matter to a stakeholder-ready PDF."
+            ),
+            "bad_question": "What are your discovery challenges?",
+            "good_question": (
+                "When synthesis arrives after the roadmap decision, what artifact would need to appear within 24 hours "
+                "for the next interview to change direction?"
+            ),
+        },
         "required_response_shape": {
             "updated_insight_doc": {
                 "id": "insight_doc_after_interview_001",

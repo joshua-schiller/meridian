@@ -83,7 +83,9 @@ class AdaptiveLoopTests(unittest.TestCase):
             prior_insight_doc=first_result.updated_insight_doc,
             contact=contacts[1],
             dossier=dossiers[1],
-            next_interviewee_id="pm_003_pending",
+            next_contact=contacts[2],
+            next_dossier=dossiers[2],
+            next_interviewee_id=contacts[2].id,
         )
 
         findings = {
@@ -100,11 +102,39 @@ class AdaptiveLoopTests(unittest.TestCase):
             {"pm_001", "pm_002"},
         )
         self.assertEqual(second_result.next_question_bank.interview_number, 3)
+        self.assertEqual(second_result.next_question_bank.for_interviewee, contacts[2].id)
         self.assertEqual(first_result.next_question_bank.for_interviewee, contacts[1].id)
         self.assertIn("Noah", first_result.next_question_bank.personalized_opening)
         self.assertIn(
             "Recently led a sprint review",
             first_result.next_question_bank.personalized_opening,
+        )
+        self.assertIn("Ava", second_result.next_question_bank.personalized_opening)
+
+    def test_third_interview_adds_report_cadence_nuance(self) -> None:
+        contacts, dossiers, transcripts, prior_doc, _ = load_demo_sequence_inputs(FIXTURES_DIR)
+
+        result = run_adaptive_loop(
+            transcript=transcripts[2],
+            prior_insight_doc=prior_doc,
+            contact=contacts[2],
+            dossier=dossiers[2],
+            next_interviewee_id="pm_004_pending",
+        )
+
+        findings = {
+            finding.id: finding
+            for theme in result.updated_insight_doc.themes
+            for finding in theme.findings
+        }
+
+        self.assertIn("decision_memo_cadence", findings)
+        self.assertEqual(len(result.updated_insight_doc.contradictions), 1)
+        self.assertTrue(
+            any(
+                "decision memo" in question.primary.lower()
+                for question in result.next_question_bank.questions
+            )
         )
 
 
