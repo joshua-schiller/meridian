@@ -8,6 +8,8 @@ Run from the repo root:
 PYTHONPATH=packages/research_core uvicorn apps.api.app.main:app --reload --port 8001
 ```
 
+For deployment, use the Render blueprint in `render.yaml`. See `docs/deployment.md` for the exact Render and Vercel environment variable wiring.
+
 Current endpoints:
 
 - `GET /health`

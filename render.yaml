@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: meridian-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r apps/api/requirements.txt
+    startCommand: uvicorn apps.api.app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: PYTHONPATH
+        value: packages/research_core
+      - key: CLAUDE_MODEL
+        value: claude-sonnet-4-5
+      - key: CLAUDE_TIMEOUT_SECONDS
+        value: "90"
+      - key: REDIS_KEY_PREFIX
+        value: meridian
+      - key: REDIS_USE_JSON
+        value: "0"
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: DEEPGRAM_API_KEY
+        sync: false
+      - key: REDIS_URL
+        sync: false

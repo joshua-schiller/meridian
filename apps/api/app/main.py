@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any
 import json
+import os
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Response
@@ -42,6 +43,23 @@ load_dotenv()
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 FIXTURES_DIR = ROOT_DIR / "fixtures"
+DEFAULT_CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+]
+
+
+def parse_cors_allowed_origins(raw_origins: str | None) -> list[str]:
+    if not raw_origins:
+        return DEFAULT_CORS_ALLOWED_ORIGINS.copy()
+
+    return [
+        origin.strip().rstrip("/")
+        for origin in raw_origins.split(",")
+        if origin.strip()
+    ]
 
 app = FastAPI(
     title="Meridian API",
@@ -51,12 +69,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-    ],
+    allow_origins=parse_cors_allowed_origins(os.environ.get("CORS_ALLOWED_ORIGINS")),
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )

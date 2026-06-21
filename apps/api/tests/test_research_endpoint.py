@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from apps.api.app.main import app
+from apps.api.app.main import app, parse_cors_allowed_origins
 from apps.api.app.redis_memory import (
     DisabledResearchMemory,
     InMemoryResearchMemory,
@@ -38,6 +38,14 @@ class ResearchEndpointTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.memory_patcher.stop()
+
+    def test_parse_cors_allowed_origins_trims_commas_and_trailing_slashes(self) -> None:
+        self.assertEqual(
+            parse_cors_allowed_origins(
+                " https://meridian.vercel.app/,https://preview.vercel.app ,, "
+            ),
+            ["https://meridian.vercel.app", "https://preview.vercel.app"],
+        )
 
     def test_run_fixture_endpoint_returns_grounded_loop_payload(self) -> None:
         with warnings.catch_warnings():
