@@ -179,6 +179,12 @@ export default async function Home() {
               living insight document, and produces the next AI interview plan so teams stop repeating
               the same broad discovery script.
             </p>
+            <a
+              href="/voice"
+              className="mt-5 inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+            >
+              <span aria-hidden>▶</span> Try the live discovery call
+            </a>
           </div>
 
           <aside className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
