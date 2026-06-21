@@ -311,12 +311,14 @@ export default function IntervieweeSession() {
 
       {/* Status line */}
       <div className="flex flex-col items-center gap-2 text-center">
-        <span className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-[var(--accent)]">
-          {active && phase !== "connecting" && (
-            <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--accent)]" />
-          )}
-          {PHASE_LABEL[phase]}
-        </span>
+        {phase !== "idle" && (
+          <span className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-[var(--accent)]">
+            {active && phase !== "connecting" && (
+              <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--accent)]" />
+            )}
+            {PHASE_LABEL[phase]}
+          </span>
+        )}
         {/* The most recent thing Meridian said, as a live caption */}
         {latest && phase !== "done" && (
           <p className="max-w-md text-lg font-medium leading-relaxed text-[var(--foreground)]">
