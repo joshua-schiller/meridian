@@ -660,14 +660,11 @@ export default function Home() {
     <main className="min-h-screen px-4 py-8 md:px-8 md:py-12">
       <div className="mx-auto max-w-6xl">
         {/* Banner header */}
-        <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200/70 p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.015)] mb-8">
+        <div className="relative overflow-hidden rounded-none bg-white border border-slate-200/70 p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.015)] mb-8">
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-100/40 to-transparent rounded-full blur-3xl pointer-events-none" />
           <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <span className="text-[9px] font-extrabold uppercase tracking-widest text-[var(--accent)] bg-[var(--accent-wash)] px-2.5 py-1 rounded-full border border-blue-100">
-                AI Operator Console
-              </span>
-              <h1 className="text-3xl font-extrabold tracking-tight text-[var(--foreground)] md:text-4xl mt-3">
+              <h1 className="text-3xl font-extrabold tracking-tight text-[var(--foreground)] md:text-4xl">
                 Campaigns
               </h1>
               <p className="text-sm text-[var(--muted)] mt-1.5 max-w-xl">
@@ -677,7 +674,7 @@ export default function Home() {
             <button
               type="button"
               onClick={openCreateCampaign}
-              className="inline-flex h-11 items-center justify-center rounded-xl bg-[var(--accent)] hover:bg-[#0855a1] px-5 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(10,102,194,0.15)] hover:shadow-[0_4px_20px_rgba(10,102,194,0.3)] transition-all duration-300 transform active:scale-95"
+              className="inline-flex h-11 items-center justify-center rounded-none bg-[var(--accent)] hover:bg-[#0855a1] px-5 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(10,102,194,0.15)] hover:shadow-[0_4px_20px_rgba(10,102,194,0.3)] transition-all duration-300 transform active:scale-95"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
@@ -687,7 +684,7 @@ export default function Home() {
           </div>
         </div>
 
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-md shadow-sm">
+        <section className="overflow-hidden rounded-none border border-slate-200 bg-white/95 backdrop-blur-md shadow-sm">
           <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-slate-100 bg-slate-50/50 px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] md:grid-cols-[18rem_1fr_15rem_12rem]">
             <span>Name</span>
             <span className="hidden md:block">Goal</span>
