@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type FormEvent, type KeyboardEvent, useState } from "react";
+import { type FormEvent, type KeyboardEvent, useState, useRef, useEffect } from "react";
 
 import { campaigns as campaignFixtures } from "@/lib/campaigns";
 
@@ -176,6 +176,25 @@ export default function Home() {
   const [contactsFileText, setContactsFileText] = useState<string>("");
   const [createStep, setCreateStep] = useState<number>(1);
 
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const goalInputRef = useRef<HTMLInputElement>(null);
+  const contextTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (view === "create") {
+      const timer = setTimeout(() => {
+        if (createStep === 1) {
+          nameInputRef.current?.focus();
+        } else if (createStep === 2) {
+          goalInputRef.current?.focus();
+        } else if (createStep === 4) {
+          contextTextareaRef.current?.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [view, createStep]);
+
   function openCreateCampaign() {
     setDraft(emptyDraft());
     setPendingCampaign(null);
@@ -304,7 +323,7 @@ export default function Home() {
     return (
       <main className="min-h-screen px-4 py-8 md:px-8 md:py-12 flex flex-col justify-center items-center">
         <div className="w-full max-w-3xl">
-          <PageHeader title="Create Campaign" onHome={goHome} />
+          <PageHeader title="Create Campaign" />
 
           <form onSubmit={handleCreateSubmit} noValidate className="relative mt-8 w-full">
             <section className="rounded-none border border-slate-200 bg-white/95 p-8 md:p-14 shadow-[0_12px_40px_rgba(10,102,194,0.04)] min-h-[420px] flex flex-col justify-between relative overflow-hidden">
@@ -330,11 +349,18 @@ export default function Home() {
                       <p className="text-sm text-[var(--muted)] mt-1.5">Give your discovery research campaign a clear, identifiable name.</p>
                     </div>
                     <input
+                      ref={nameInputRef}
                       required={createStep === 1}
                       type="text"
                       placeholder="e.g. Developer APIs Feedback loop"
                       value={draft.name}
                       onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          nextStep();
+                        }
+                      }}
                       className="h-14 rounded-2xl border border-slate-200 bg-white px-5 text-base text-[var(--foreground)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-blue-100/70 shadow-sm mt-3 w-full"
                     />
                   </label>
@@ -348,11 +374,18 @@ export default function Home() {
                       <p className="text-sm text-[var(--muted)] mt-1.5">Define what you want the AI operator to learn from the participants.</p>
                     </div>
                     <input
+                      ref={goalInputRef}
                       required={createStep === 2}
                       type="text"
                       placeholder="e.g. Find out why developers struggle with OAuth setup in React"
                       value={draft.goal}
                       onChange={(event) => setDraft({ ...draft, goal: event.target.value })}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          nextStep();
+                        }
+                      }}
                       className="h-14 rounded-2xl border border-slate-200 bg-white px-5 text-base text-[var(--foreground)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-blue-100/70 shadow-sm mt-3 w-full"
                     />
                   </label>
@@ -417,6 +450,7 @@ export default function Home() {
                       <p className="text-sm text-[var(--muted)] mt-1.5">Add details, guidelines, or persona summaries to calibrate the AI operator.</p>
                     </div>
                     <textarea
+                      ref={contextTextareaRef}
                       rows={5}
                       placeholder="Context details or instructions to guide the AI operator..."
                       value={draft.additionalContext}
@@ -539,7 +573,7 @@ export default function Home() {
     return (
       <main className="min-h-screen px-4 py-8 md:px-8 md:py-12">
         <div className="mx-auto max-w-3xl">
-          <PageHeader title="Review Question Bank" onHome={goHome} />
+          <PageHeader title="Review Question Bank" />
 
           <p className="text-sm text-[var(--muted)] mt-2">
             These questions were compiled from your goal. Edit them or add new questions before initiating the operator.
@@ -717,7 +751,7 @@ export default function Home() {
   );
 }
 
-function PageHeader({ title, onHome }: { title: string; onHome: () => void }) {
+function PageHeader({ title }: { title: string }) {
   return (
     <header className="flex min-h-14 items-center justify-between gap-4 border-b border-slate-200 pb-5">
       {title ? (
@@ -727,13 +761,6 @@ function PageHeader({ title, onHome }: { title: string; onHome: () => void }) {
       ) : (
         <span aria-hidden="true" />
       )}
-      <button
-        type="button"
-        onClick={onHome}
-        className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:bg-slate-50 shadow-sm active:scale-95"
-      >
-        Home
-      </button>
     </header>
   );
 }

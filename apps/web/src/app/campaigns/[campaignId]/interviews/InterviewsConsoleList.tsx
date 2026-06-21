@@ -17,8 +17,8 @@ export default function InterviewsConsoleList({ interviews }: { interviews: Inte
   const completed = interviews.filter((i) => i.status === "completed");
   const inProgress = interviews.filter((i) => i.status !== "completed");
 
-  const [isCompletedOpen, setIsCompletedOpen] = useState(true);
-  const [isInProgressOpen, setIsInProgressOpen] = useState(true);
+  const [isCompletedOpen, setIsCompletedOpen] = useState(false);
+  const [isInProgressOpen, setIsInProgressOpen] = useState(false);
 
   return (
     <div className="grid gap-6">
