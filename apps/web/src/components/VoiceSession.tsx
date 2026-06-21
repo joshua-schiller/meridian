@@ -10,7 +10,7 @@ import type {
 type ServerMsg =
   | { type: "ready"; opening: string }
   | { type: "agent_text"; text: string; turn_id: string }
-  | { type: "agent_audio"; data: string; turn_id: string }
+  | { type: "agent_audio"; data: string; turn_id: string; seq?: number; final?: boolean }
   | { type: "transcript_final"; text: string; turn_id: string }
   | { type: "tts_error"; message: string }
   | { type: "session_complete"; transcript: Transcript }
@@ -131,6 +131,12 @@ export default function VoiceSession() {
   // sending mic audio so its own voice isn't transcribed back into the loop.
   const agentBusyRef = useRef<boolean>(false);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  // Streaming TTS playback: the agent's reply arrives as ordered audio chunks
+  // (one per sentence). We queue them and play in order so the mic only
+  // reopens once the whole reply has finished.
+  const audioQueueRef = useRef<string[]>([]);
+  const playingRef = useRef<boolean>(false);
+  const finalChunkReceivedRef = useRef<boolean>(true);
 
   const stopMic = useCallback(() => {
     processorRef.current?.disconnect();
@@ -163,31 +169,43 @@ export default function VoiceSession() {
     audio.play().catch(clear);
   }, []);
 
-  const playAudio = useCallback((base64Data: string) => {
-    // Serialize playback: stop anything currently playing so two responses
-    // can never overlap.
-    if (currentAudioRef.current) {
-      currentAudioRef.current.pause();
-      currentAudioRef.current = null;
+  // Play the next queued chunk; when the queue is empty AND the final chunk of
+  // the reply has arrived, reopen the mic (half-duplex).
+  const playFromQueue = useCallback(() => {
+    const next = audioQueueRef.current.shift();
+    if (next === undefined) {
+      playingRef.current = false;
+      // Only reopen the mic once the whole reply has played, never mid-reply.
+      if (finalChunkReceivedRef.current) agentBusyRef.current = false;
+      return;
     }
-    const bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
-    const blob = new Blob([bytes], { type: "audio/mpeg" });
-    const url = URL.createObjectURL(blob);
+    playingRef.current = true;
+    agentBusyRef.current = true; // mute mic while the agent speaks
+    const bytes = Uint8Array.from(atob(next), (c) => c.charCodeAt(0));
+    const url = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
     const audio = new Audio(url);
     currentAudioRef.current = audio;
-    agentBusyRef.current = true; // mute mic while the agent speaks
-    const release = () => {
+    const advance = () => {
       URL.revokeObjectURL(url);
-      if (currentAudioRef.current === audio) currentAudioRef.current = null;
-      agentBusyRef.current = false; // reopen mic once the agent finishes
+      playFromQueue();
     };
-    audio.onended = release;
-    audio.onerror = release;
+    audio.onended = advance;
+    audio.onerror = advance;
     audio.play().catch((err) => {
       console.error(err);
-      release();
+      advance();
     });
   }, []);
+
+  const enqueueAudio = useCallback(
+    (base64Data: string, isFinal: boolean) => {
+      if (isFinal) finalChunkReceivedRef.current = true;
+      audioQueueRef.current.push(base64Data);
+      agentBusyRef.current = true;
+      if (!playingRef.current) playFromQueue();
+    },
+    [playFromQueue],
+  );
 
   const runPostInterviewPipeline = useCallback(async (transcript: Transcript) => {
     setAdaptiveLoop(null);
@@ -243,10 +261,15 @@ export default function VoiceSession() {
         case "ready":
           break;
         case "agent_text":
+          // New agent turn begins — mute the mic and reset the audio queue so
+          // the mic won't reopen until this reply's final chunk has played.
+          agentBusyRef.current = true;
+          finalChunkReceivedRef.current = false;
+          audioQueueRef.current = [];
           setTurns((t) => [...t, { id: msg.turn_id, speaker: "agent", text: msg.text }]);
           break;
         case "agent_audio":
-          playAudio(msg.data);
+          enqueueAudio(msg.data, msg.final ?? true);
           break;
         case "transcript_final":
           // User finished a turn — mute the mic until the agent has replied,
@@ -264,13 +287,14 @@ export default function VoiceSession() {
           break;
         case "error":
         case "tts_error":
-          // If TTS failed there's no audio to end, so reopen the mic here.
-          agentBusyRef.current = false;
+          // No more audio is coming, so let the queue drain and reopen the mic.
+          finalChunkReceivedRef.current = true;
+          if (!playingRef.current) agentBusyRef.current = false;
           setErrorMsg(msg.message);
           break;
       }
     },
-    [playAudio, runPostInterviewPipeline],
+    [enqueueAudio, runPostInterviewPipeline],
   );
 
   const connect = useCallback(

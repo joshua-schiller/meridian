@@ -4,6 +4,7 @@ import asyncio
 import base64
 import json
 import os
+import re
 import uuid
 from pathlib import Path
 from typing import Any
@@ -30,6 +31,12 @@ def _ant_key() -> str:
 
 def _claude_model() -> str:
     return os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-5")
+
+
+# The live interviewer favors speed over depth, so it defaults to Haiku (much
+# lower latency). The post-interview loop synthesis still uses _claude_model().
+def _voice_model() -> str:
+    return os.environ.get("VOICE_CLAUDE_MODEL", "claude-haiku-4-5")
 
 
 # Aura-2 is Deepgram's newer, more natural/expressive TTS family. Override the
@@ -74,6 +81,22 @@ SAMPLE_LINE = (
     "Oh, that's such a real tension — the insight arrives after the ship has "
     "already sailed. Walk me through the last time that happened."
 )
+
+
+def _split_for_tts(text: str) -> list[str]:
+    """Split a reply into sentence-ish chunks so TTS can stream. Short trailing
+    fragments are merged back so we never synthesize a 2-word chunk."""
+    text = text.strip()
+    if not text:
+        return []
+    parts = [p.strip() for p in re.findall(r"[^.!?]+[.!?]*", text) if p.strip()]
+    chunks: list[str] = []
+    for part in parts:
+        if chunks and len(part) < 14:
+            chunks[-1] = f"{chunks[-1]} {part}"
+        else:
+            chunks.append(part)
+    return chunks or [text]
 
 
 async def generate_interviewer_response(
@@ -125,18 +148,23 @@ WHAT YOU'RE TRYING TO UNDERSTAND
 
 {directive}
 
-HOW YOU TALK (this is spoken out loud on a call):
-- Sound human: contractions, warmth, brevity. 1-3 sentences, ~40 words max. No lists, no markdown, no emoji.
-- React first. Reflect back something specific in {first_name}'s OWN words so they feel heard ("Oh interesting — so it's the synthesis that falls apart, not the interviews themselves.").
+HOW YOU TALK (spoken aloud on a live call — every extra word adds delay):
+- EXTREMELY BRIEF. A tiny reaction (3-6 words) + ONE short question. Aim for ~15 words total, NEVER more than 20. One or two short sentences. No lists, no markdown, no emoji.
+- React first with something specific from {first_name}'s OWN words so they feel heard ("So it's the synthesis, not the interviews —").
 - Ask exactly ONE question. Never stack two.
-- Go for stories and specifics: "Walk me through the last time that happened" beats "Does that happen a lot?"
+- Go for specifics: "Walk me through the last time that happened" beats "Does that happen a lot?"
 - Use {first_name}'s name occasionally, not every line.
-- Never mention question banks, research goals, scores, or that you're an AI. You're just a person having a real conversation."""
+- Never mention question banks, research goals, scores, or that you're an AI. You're just a person having a real conversation.
+
+EXAMPLES of the right length:
+"So volume's the real bottleneck, not synthesis. How many interviews are you running a month?"
+"Three weeks to surface that? Walk me through where it got stuck."
+"""
 
     response = await client.messages.create(
-        model=_claude_model(),
-        max_tokens=160,
-        temperature=0.8,
+        model=_voice_model(),
+        max_tokens=70,
+        temperature=0.7,
         system=system,
         messages=[
             {
@@ -166,7 +194,7 @@ WHAT YOU WANT TO UNDERSTAND: {question_bank.research_goal}
 
 This is spoken out loud. Warm and natural, 2-3 sentences, ending in one easy open question. No lists, no markdown. Never say you're an AI or mention a 'research goal'."""
         resp = await client.messages.create(
-            model=_claude_model(),
+            model=_voice_model(),
             max_tokens=160,
             temperature=0.7,
             system=system,
@@ -229,17 +257,29 @@ class VoiceSession:
         await self._send({"type": "agent_text", "text": text, "turn_id": turn_id})
         if not _dg_key():
             return
-        try:
-            audio_bytes = await synthesize_speech(text, self.voice)
+
+        # Stream TTS sentence-by-sentence: synthesize all chunks concurrently
+        # but emit them in order, so the agent starts speaking after the FIRST
+        # sentence is ready (~1.5s) instead of waiting for the whole reply.
+        chunks = _split_for_tts(text)
+        tasks = [asyncio.create_task(synthesize_speech(c, self.voice)) for c in chunks]
+        for i, task in enumerate(tasks):
+            try:
+                audio_bytes = await task
+            except Exception as exc:
+                await self._send({"type": "tts_error", "message": str(exc)})
+                for pending in tasks[i + 1 :]:
+                    pending.cancel()
+                break
             await self._send(
                 {
                     "type": "agent_audio",
                     "data": base64.b64encode(audio_bytes).decode(),
                     "turn_id": turn_id,
+                    "seq": i,
+                    "final": i == len(tasks) - 1,
                 }
             )
-        except Exception as exc:
-            await self._send({"type": "tts_error", "message": str(exc)})
 
     async def _handle_interviewee_turn(self, text: str) -> None:
         turn_id = self._turn_id()
@@ -321,7 +361,7 @@ class VoiceSession:
             "wss://api.deepgram.com/v1/listen"
             "?encoding=linear16&sample_rate=16000&channels=1"
             "&model=nova-2&language=en-US&smart_format=true"
-            "&interim_results=false&endpointing=300"
+            "&interim_results=false&endpointing=800"
         )
 
         try:
