@@ -19,7 +19,7 @@ from research_core import (
 from research_core.claude_loop import ClaudeLoopError
 from research_core.fixture_io import load_demo_inputs
 from research_core.loop import average_specificity
-from research_core.pipeline import run_loop
+from research_core.pipeline import resolve_mode, run_loop
 from research_core.report import (
     StakeholderReport,
     build_stakeholder_report,
@@ -63,6 +63,13 @@ class TranscriptLoopRequest(BaseModel):
     dossier: Dossier | None = None
 
 
+class LoopReportRequest(BaseModel):
+    loop_result: LoopResult
+    contact: Contact | None = None
+    dossier: Dossier | None = None
+    baseline_question_bank: QuestionBank | None = None
+
+
 def read_fixture(relative_path: str) -> dict[str, Any]:
     fixture_path = FIXTURES_DIR / relative_path
     return json.loads(fixture_path.read_text())
@@ -77,6 +84,10 @@ def loop_payload(
     dossier: Dossier | None,
     mode: LoopMode,
 ) -> dict[str, Any]:
+    requested_mode = mode
+    resolved_mode = resolve_mode(mode)
+    fallback_reason: str | None = None
+
     try:
         result = run_loop(
             transcript=transcript,
@@ -86,7 +97,21 @@ def loop_payload(
             mode=mode,
         )
     except ClaudeLoopError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if mode != "auto":
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        result = run_loop(
+            transcript=transcript,
+            prior_insight_doc=prior_insight_doc,
+            contact=contact,
+            dossier=dossier,
+            mode="deterministic",
+        )
+        resolved_mode = "deterministic"
+        fallback_reason = f"Claude loop failed; auto mode used deterministic fallback: {exc}"
+
+    if requested_mode == "auto" and resolved_mode == "deterministic" and fallback_reason is None:
+        fallback_reason = "ANTHROPIC_API_KEY missing; auto mode used deterministic fallback."
 
     return {
         "transcript": transcript.model_dump(mode="json"),
@@ -105,7 +130,10 @@ def loop_payload(
             "grounded_questions": sum(
                 1 for question in result.next_question_bank.questions if question.grounding
             ),
-            "mode": mode,
+            "mode": resolved_mode,
+            "requested_mode": requested_mode,
+            "resolved_mode": resolved_mode,
+            "fallback_reason": fallback_reason,
         },
     }
 
@@ -147,6 +175,16 @@ def report_from_transcript_request(
         contact=contact,
         dossier=dossier,
         baseline_question_bank=baseline_question_bank,
+    )
+
+
+def report_from_loop_result_request(request: LoopReportRequest) -> StakeholderReport:
+    default_contact, default_dossier, _, _, default_baseline_bank = load_demo_inputs(FIXTURES_DIR)
+    return build_stakeholder_report(
+        loop_result=request.loop_result,
+        contact=request.contact or default_contact,
+        dossier=request.dossier or default_dossier,
+        baseline_question_bank=request.baseline_question_bank or default_baseline_bank,
     )
 
 
@@ -271,6 +309,25 @@ def report_from_transcript_pdf(
     mode: LoopMode = "deterministic",
 ) -> Response:
     report = report_from_transcript_request(request, mode)
+    return Response(
+        content=render_report_pdf(report),
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'inline; filename="meridian-discovery-report.pdf"'},
+    )
+
+
+@app.post("/report/from-loop-result/markdown")
+def report_from_loop_result_markdown(request: LoopReportRequest) -> Response:
+    report = report_from_loop_result_request(request)
+    return Response(
+        content=report_to_markdown(report),
+        media_type="text/markdown",
+    )
+
+
+@app.post("/report/from-loop-result.pdf")
+def report_from_loop_result_pdf(request: LoopReportRequest) -> Response:
+    report = report_from_loop_result_request(request)
     return Response(
         content=render_report_pdf(report),
         media_type="application/pdf",

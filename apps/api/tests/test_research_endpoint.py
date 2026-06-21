@@ -7,6 +7,9 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from apps.api.app.main import app
+from research_core.claude_loop import ClaudeLoopError
+from research_core.fixture_io import load_demo_inputs
+from research_core.loop import run_adaptive_loop
 
 
 FIXTURES_DIR = Path(__file__).resolve().parents[3] / "fixtures"
@@ -57,6 +60,43 @@ class ResearchEndpointTests(unittest.TestCase):
         response.raise_for_status()
         payload = response.json()
         self.assertEqual(payload["loop_result"]["id"], "loop_after_interview_001")
+        self.assertEqual(payload["metrics"]["mode"], "deterministic")
+        self.assertEqual(payload["metrics"]["requested_mode"], "auto")
+        self.assertEqual(payload["metrics"]["resolved_mode"], "deterministic")
+        self.assertIn("ANTHROPIC_API_KEY", payload["metrics"]["fallback_reason"])
+
+    def test_auto_mode_falls_back_when_claude_contract_fails(self) -> None:
+        contact, dossier, transcript, prior_doc, _ = load_demo_inputs(FIXTURES_DIR)
+        fallback_result = run_adaptive_loop(
+            transcript=transcript,
+            prior_insight_doc=prior_doc,
+            contact=contact,
+            dossier=dossier,
+        )
+
+        with (
+            warnings.catch_warnings(),
+            patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"}, clear=True),
+            patch("apps.api.app.main.run_loop") as mocked_run_loop,
+        ):
+            warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
+            mocked_run_loop.side_effect = [
+                ClaudeLoopError("Claude response did not match the loop contract."),
+                fallback_result,
+            ]
+            client = TestClient(app)
+
+            response = client.post(
+                "/research/run-transcript?mode=auto",
+                json={"transcript": load_fixture_transcript()},
+            )
+
+        response.raise_for_status()
+        payload = response.json()
+        self.assertEqual(payload["metrics"]["mode"], "deterministic")
+        self.assertEqual(payload["metrics"]["requested_mode"], "auto")
+        self.assertIn("Claude loop failed", payload["metrics"]["fallback_reason"])
+        self.assertEqual(mocked_run_loop.call_count, 2)
 
     def test_demo_report_markdown_endpoint_returns_stakeholder_report(self) -> None:
         with warnings.catch_warnings():
@@ -113,6 +153,26 @@ class ResearchEndpointTests(unittest.TestCase):
         markdown.raise_for_status()
         pdf.raise_for_status()
         self.assertIn("Next AI Interview Plan", markdown.text)
+        self.assertTrue(pdf.content.startswith(b"%PDF"))
+
+    def test_report_from_loop_result_endpoint_reuses_existing_loop_payload(self) -> None:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="The 'app' shortcut", category=DeprecationWarning)
+            client = TestClient(app)
+
+        loop = client.post(
+            "/research/run-transcript",
+            json={"transcript": load_fixture_transcript()},
+        )
+        loop.raise_for_status()
+
+        pdf = client.post(
+            "/report/from-loop-result.pdf",
+            json={"loop_result": loop.json()["loop_result"]},
+        )
+
+        pdf.raise_for_status()
+        self.assertEqual(pdf.headers["content-type"], "application/pdf")
         self.assertTrue(pdf.content.startswith(b"%PDF"))
 
     def test_scripted_voice_session_emits_canonical_transcript_without_keys(self) -> None:

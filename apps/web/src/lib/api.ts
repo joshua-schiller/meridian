@@ -17,6 +17,9 @@ export type LoopMetrics = {
   findings_added: number;
   grounded_questions: number;
   mode: string;
+  requested_mode?: string;
+  resolved_mode?: string;
+  fallback_reason?: string | null;
 };
 
 type AdaptiveLoopResponse = {
@@ -68,6 +71,9 @@ function fixtureMetrics(
     findings_added: insight.themes.reduce((s, t) => s + t.findings.length, 0),
     grounded_questions: after.questions.filter((q) => q.grounding.length > 0).length,
     mode: "fixtures",
+    requested_mode: "fixtures",
+    resolved_mode: "fixtures",
+    fallback_reason: "API unavailable; rendered local fixture fallback.",
   };
 }
 

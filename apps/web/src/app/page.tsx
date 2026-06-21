@@ -138,8 +138,11 @@ export default async function Home() {
 
   const liveBadge =
     source === "api"
-      ? { label: `Live adaptive loop: ${metrics.mode}`, cls: "bg-[var(--accent)] text-white" }
-      : { label: "Fixture fallback", cls: "bg-[var(--warn)] text-white" };
+      ? {
+          label: `Baseline preview: ${metrics.resolved_mode ?? metrics.mode}`,
+          cls: "bg-[var(--panel-strong)] text-[var(--accent-ink)]",
+        }
+      : { label: "Local fixture preview", cls: "bg-[var(--warn)] text-white" };
   const specificityDelta = Math.round(
     (metrics.specificity_after - metrics.specificity_before) * 100,
   );
@@ -336,18 +339,18 @@ export default async function Home() {
           <div className="grid gap-3 md:grid-cols-3">
             <QualityCheck
               label="Plan got sharper"
-              value="Adapted"
+              value="Gap-targeted"
               detail={`Supplemental specificity score moved from ${metrics.specificity_before.toFixed(2)} to ${metrics.specificity_after.toFixed(2)} (+${specificityDelta} pts).`}
             />
             <QualityCheck
               label="Evidence link"
-              value={`${metrics.grounded_questions}/${questionBankAfter.questions.length}`}
-              detail="Generated follow-ups point back to Interview 1 evidence."
+              value="Quote-backed"
+              detail={`${metrics.grounded_questions}/${questionBankAfter.questions.length} generated follow-ups point back to Interview 1 evidence.`}
             />
             <QualityCheck
               label="Insight update"
-              value={`+${metrics.findings_added}`}
-              detail="New findings were added to the living insight document."
+              value="Living doc"
+              detail={`${metrics.findings_added} new findings are carried forward in the updated research artifact.`}
             />
           </div>
         </section>
