@@ -165,8 +165,8 @@ export default async function CampaignViewPage({ params }: CampaignViewPageProps
                           <h4 className="text-sm font-semibold text-[var(--foreground)]">
                             {finding.title}
                           </h4>
-                          <p className="text-xs leading-relaxed text-[var(--muted)] line-clamp-2">
-                            {finding.body}
+                          <p className="text-xs leading-relaxed text-[var(--muted)]">
+                            {finding.summary ?? finding.body}
                           </p>
                         </div>
                         <div className="shrink-0 flex items-center gap-3 self-end sm:self-center">

@@ -11,6 +11,7 @@ export type CampaignInterview = {
 
 export type CampaignReportFinding = {
   title: string;
+  summary?: string;
   body: string;
   confidence: "High" | "Medium" | "Low";
 };
@@ -197,31 +198,37 @@ export const campaigns: Campaign[] = [
       "findings": [
         {
           "title": "Stale data makes Pulse unusable for operational and time-critical decisions",
+          "summary": "Pulse data is stale by design — a six-hour sync and multi-day close lags — so teams can't trust it for time-sensitive decisions.",
           "body": "Data is stale by design (6-hour sync cycle, multi-day lags during close, or days-old account health signals), making Pulse structurally unfit for intraday, event-driven, customer-facing, or month-end decisions across multiple teams.",
           "confidence": "High"
         },
         {
           "title": "Spreadsheets, source tools, and custom-built solutions become the real source of truth",
+          "summary": "Teams across the company bypass Pulse, falling back to spreadsheets and self-built dashboards as their real source of truth.",
           "body": "Users across Sales Ops, Support, Marketing, Finance, Engineering, Customer Success, Product Analysis, and Operations bypass Pulse entirely — exporting to spreadsheets, staying in source systems, building their own dashboards, pulling data manually, waiting on the data team, or escaping to notebooks — which become the team's de facto source of truth.",
           "confidence": "High"
         },
         {
           "title": "Data accuracy mismatches and known bugs destroy trust in Pulse numbers",
+          "summary": "When Pulse numbers don't match the source systems, people stop trusting all of it and rebuild the figures by hand.",
           "body": "When Pulse figures disagree with source-system numbers, users lose confidence in all Pulse data, stop presenting it to stakeholders, and rebuild figures manually to defend in meetings.",
           "confidence": "High"
         },
         {
           "title": "Query builder too complex for power users and non-technical users alike — but for opposite reasons",
+          "summary": "The query builder overwhelms non-technical users yet boxes in power users — it satisfies neither end of the spectrum.",
           "body": "Non-technical users find the query builder overwhelming for simple tasks, while technical users hit a ceiling when they need advanced SQL constructs, higher query limits, or API access — the tool satisfies neither end of the spectrum.",
           "confidence": "High"
         },
         {
           "title": "Absence of data lineage, freshness indicators, and plain-language metric definitions forces users to distrust Pulse by default",
+          "summary": "Pulse data is stale by design — a six-hour sync and multi-day close lags — so teams can't trust it for time-sensitive decisions.",
           "body": "Users cannot see when data was last refreshed or trace a Pulse number back to its source calculation; non-technical users additionally cannot decode jargon metric names to know if they've selected the right metric — forcing everyone to assume the worst and revert to source systems for anything consequential.",
           "confidence": "High"
         },
         {
           "title": "Slow query performance and timeouts undermine trust and usability",
+          "summary": "Full-scale queries lag or time out, so users abandon Pulse mid-task — and the heaviest users suffer the most.",
           "body": "Full-scale queries take so long to load — or time out entirely — that users abandon Pulse mid-workflow; the lag and timeout ceiling scale with data volume and query complexity, meaning the heaviest users suffer most.",
           "confidence": "High"
         }

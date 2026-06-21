@@ -30,9 +30,36 @@ def sentences(text):
     return [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
 
 
+# Concise one-line summaries for the overview cards (the full body stays on the
+# report). Matched to a theme by keyword.
+SUMMARIES = [
+    (("stale", "freshness"),
+     "Pulse data is stale by design — a six-hour sync and multi-day close lags — so teams can't trust it for time-sensitive decisions."),
+    (("spreadsheet", "source of truth", "custom-built", "shadow", "workaround"),
+     "Teams across the company bypass Pulse, falling back to spreadsheets and self-built dashboards as their real source of truth."),
+    (("accuracy", "mismatch", "destroy trust", "bug"),
+     "When Pulse numbers don't match the source systems, people stop trusting all of it and rebuild the figures by hand."),
+    (("query builder", "too complex"),
+     "The query builder overwhelms non-technical users yet boxes in power users — it satisfies neither end of the spectrum."),
+    (("lineage", "freshness indicator", "transparency", "plain-language"),
+     "Users can't see when data refreshed or trace a number to its source, so they assume the worst and revert to source systems."),
+    (("performance", "timeout", "slow"),
+     "Full-scale queries lag or time out, so users abandon Pulse mid-task — and the heaviest users suffer the most."),
+]
+
+
+def summarize(label, body):
+    low = label.lower()
+    for keywords, summary in SUMMARIES:
+        if any(k in low for k in keywords):
+            return summary
+    return body.split(",")[0].split(" — ")[0].strip()
+
+
 themes_sorted = sorted(doc["themes"], key=confirmers, reverse=True)
 report_findings = [
-    {"title": t["label"], "body": t["findings"][0]["text"],
+    {"title": t["label"], "summary": summarize(t["label"], t["findings"][0]["text"]),
+     "body": t["findings"][0]["text"],
      "confidence": (t["findings"][0].get("confidence") or "medium").capitalize()}
     for t in themes_sorted[:6]
 ]
