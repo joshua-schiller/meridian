@@ -12,6 +12,7 @@ type ChatMessage = {
 
 type CampaignChatProps = {
   campaign: Campaign;
+  isPopover?: boolean;
 };
 
 function createMessageId(role: ChatMessage["role"]) {
@@ -72,12 +73,12 @@ function answerCampaignQuestion(campaign: Campaign, prompt: string) {
   )}`;
 }
 
-export default function CampaignChat({ campaign }: CampaignChatProps) {
+export default function CampaignChat({ campaign, isPopover = false }: CampaignChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "initial-assistant-message",
       role: "assistant",
-      content: `Campaign context loaded for ${campaign.title}.`,
+      content: `Campaign context loaded for "${campaign.title}". Ask me anything about the goals, findings, participants, or next steps.`,
     },
   ]);
   const [prompt, setPrompt] = useState("");
@@ -104,29 +105,44 @@ export default function CampaignChat({ campaign }: CampaignChatProps) {
   }
 
   return (
-    <section className="mt-6 rounded-lg border border-[var(--line)] bg-[var(--panel)]">
-      <div className="border-b border-[var(--line)] px-4 py-3 md:px-5">
-        <h2 className="text-base font-semibold text-[var(--foreground)]">Campaign Chat</h2>
-      </div>
+    <section className={`${isPopover ? "" : "mt-8 border border-slate-200 rounded-2xl shadow-sm"} bg-white overflow-hidden`}>
+      {!isPopover && (
+        <div className="border-b border-slate-100 bg-slate-50/50 px-6 py-4 flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--foreground)]">
+            Campaign Co-Pilot Chat
+          </h2>
+        </div>
+      )}
 
-      <div className="flex max-h-[24rem] flex-col gap-4 overflow-y-auto px-4 py-5 md:px-5">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`max-w-[44rem] whitespace-pre-line rounded-lg px-4 py-3 text-sm leading-6 ${
-              message.role === "user"
-                ? "ml-auto bg-[var(--accent)] text-white"
-                : "mr-auto border border-[var(--line)] bg-[var(--panel-strong)] text-[var(--foreground)]"
-            }`}
-          >
-            {message.content}
-          </div>
-        ))}
+      <div className={`flex flex-col gap-4 overflow-y-auto px-6 py-6 bg-slate-50/20 ${isPopover ? "h-64" : "max-h-[24rem]"}`}>
+        {messages.map((message) => {
+          const isUser = message.role === "user";
+          return (
+            <div
+              key={message.id}
+              className={`flex flex-col max-w-[85%] ${isUser ? "ml-auto items-end" : "mr-auto items-start"}`}
+            >
+              <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1 px-1.5">
+                {isUser ? "You" : "Meridian AI"}
+              </span>
+              <div
+                className={`whitespace-pre-line px-5 py-3.5 text-sm leading-relaxed shadow-[0_2px_12px_rgba(0,0,0,0.02)] ${
+                  isUser
+                    ? "rounded-2xl rounded-tr-none bg-[var(--accent)] text-white"
+                    : "rounded-2xl rounded-tl-none border border-slate-200 bg-white text-[var(--foreground)]"
+                }`}
+              >
+                {message.content}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-3 border-t border-[var(--line)] px-4 py-4 md:flex-row md:px-5"
+        className="flex flex-col gap-3 border-t border-slate-100 px-6 py-4 md:flex-row bg-white"
       >
         <label className="sr-only" htmlFor="campaign-chat-prompt">
           Ask about this campaign
@@ -135,12 +151,12 @@ export default function CampaignChat({ campaign }: CampaignChatProps) {
           id="campaign-chat-prompt"
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
-          placeholder="Ask about findings, interviews, risks, or next steps"
-          className="min-h-11 flex-1 rounded-md border border-[var(--line)] bg-white px-3 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-wash)]"
+          placeholder="Ask about findings, interviews..."
+          className="min-h-11 flex-1 rounded-xl border border-slate-300 bg-white px-4 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-blue-100/70"
         />
         <button
           type="submit"
-          className="inline-flex h-11 items-center justify-center rounded-md bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--panel)]"
+          className="inline-flex h-11 items-center justify-center rounded-xl bg-[var(--accent)] hover:bg-[#0855a1] px-5 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(10,102,194,0.15)] hover:shadow-[0_4px_16px_rgba(10,102,194,0.25)] transition active:scale-95"
         >
           Send
         </button>
